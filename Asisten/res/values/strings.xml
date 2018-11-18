@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Asisten</string>
+    <string name="hello_world">Hello world!</string>
+	<string name="disp_wifi">Wifi</string>
+    <string name="disp_cell">Cell</string>  
+    <string name="disp_cpu">CPU load</string>
+    <string name="disp_cpu_type"> (app/kernel)</string>
+    <string name="disp_battery">Battery</string>
+    <string name="disp_name">Name</string>
+    <string name="disp_type">Speed</string>
+    <string name="disp_in">Bytes in</string>
+    <string name="disp_out">Bytes out</string>  
+    <string name="disp_user">apps</string>
+    <string name="disp_system">kernel</string>
+    <string name="view_html">HTML</string>
+    <string name="view_cookies">COOKIES</string>
+    <string name="input_other_path">[Input other path]</string>
+    <string name="exists_processes">Attention! Already there are processes running! The program will run only </string>
+    <string name="progress_dialog_message">You can abort the download, then it will continue from where it stopped</string>
+    <string name="help_server">After the successful launch can close, PHP and MySQL will continue to run in the background. \n We recommend using
+        <b>Opera Mobile</b> to view, create the local web pages. URL - http://localhost:8080.\n * User MySQL - root\n * password MySQL - leave empty\n * host MySQL - 127.0.0.1\n * database name - mysql.
+    </string>
+</resources>

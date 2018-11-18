@@ -1,0 +1,39 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical">
+ 
+	<EditText
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:hint="cari file"
+		android:id="@+id/alert_edCari"/>
+	<Button
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:text="oke"
+		android:id="@+id/alert_cariOke"/>
+	<ListView
+		android:background="#6D42FD"
+        android:id="@+id/alert_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+		android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
+    </ListView>
+	<LinearLayout 
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:orientation="horizontal">
+		<Button
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="Prev"
+			android:id="@+id/alert_mundur"/>
+		<Button
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="Next"
+			android:id="@+id/alert_maju"/>
+	</LinearLayout>
+</LinearLayout>
