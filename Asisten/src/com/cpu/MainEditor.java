@@ -149,7 +149,7 @@ public class MainEditor extends Activity implements View.OnClickListener {
                 code = "";
             }
             url = surl[1];
-            code = FileUtils.readFileBash(surl[1]);
+            code = FileUtils.readFile(surl[1]);
             fileSet.add(url);
             if (fileSet.size() > MAX_OPENED) {
                 fileSet.pollFirst();
@@ -159,7 +159,7 @@ public class MainEditor extends Activity implements View.OnClickListener {
                 Toast.makeText(this, "not found file" + url, Toast.LENGTH_LONG).show();
                 finish();
             }
-            code = FileUtils.readFileBash(url);
+            code = FileUtils.readFile(url);
             fileSet.add(url);
             if (fileSet.size() > MAX_OPENED) {
                 fileSet.pollFirst();

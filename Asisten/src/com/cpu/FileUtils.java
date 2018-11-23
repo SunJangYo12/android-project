@@ -28,20 +28,28 @@ public class FileUtils {
     }
 
     public static String readFile(String path) {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder result = new StringBuilder();
         try {
-            FileReader fr = new FileReader(path);
-            char buff[] = new char[1024];
-            int c;
-            while ((c = fr.read(buff)) != -1) {
-                sb.append(buff, 0, c);
-            }
+            FileReader fis = new FileReader(path);
+            char buffer[] = new char[1100];
+            int read;
+
+            do {
+                read = fis.read(buffer);
+                    
+                if (read >= 0)
+                {
+                    result.append(buffer, 0, read);
+                }
+            } while (read >= 0);
+
+            
         } catch (FileNotFoundException e) {
             return "File not found (TODO)";
         } catch (IOException ioe) {
             return "IOException (TODO)";
         }
-        return sb.toString();
+        return result.toString();
     }
 
     public static void saveCode(String code, String charset, String path) throws IOException {

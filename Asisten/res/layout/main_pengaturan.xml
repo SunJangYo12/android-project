@@ -24,6 +24,11 @@
         android:id="@+id/btn_local"
         android:layout_height="wrap_content"
         android:text="LOCAL SERVER" />
+    <Button
+        android:layout_width="match_parent"
+        android:id="@+id/btn_editor_color"
+        android:layout_height="wrap_content"
+        android:text="Text Editor Color" />
 
     <EditText
         android:layout_width="match_parent"

@@ -97,6 +97,10 @@ public class ReceiverBoot extends BroadcastReceiver
 			sertts.str = "";
 			context.startService(new Intent(context, ServiceTTS.class));
 			
+			Intent mIntent = new Intent(context, MainServer.class);
+			mIntent.putExtra("server","runboot");
+			mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			context.startActivity(mIntent);
 		}
 		if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED))
 		{

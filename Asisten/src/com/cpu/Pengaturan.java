@@ -17,7 +17,7 @@ import com.status.*;
 
 public class Pengaturan extends Activity
 {
-	private Button btnTelinga, aSave, btnMulut, btnDir, btnCuaca, btnServer;
+	private Button btnTelinga, aSave, btnMulut, btnDir, btnCuaca, btnServer, btnEditor;
 	private Switch swMicControl, swSuaraControl;
 	private EditText edCuaca, edCuaca1;
 	public TextToSpeech textToSpeech;
@@ -140,6 +140,27 @@ public class Pengaturan extends Activity
 					
 				}
 			});
+
+		btnEditor = (Button)findViewById(R.id.btn_editor_color);
+		btnEditor.setText("Text Editor Color : "+settings.getBoolean("text editor color",false));
+		btnEditor.setOnClickListener(new View.OnClickListener()
+			{
+				public void onClick(View v){
+					SharedPreferences.Editor editor = settings.edit();	
+
+					if (settings.getBoolean("text editor color",false)) {
+						editor.putBoolean("text editor color", false);
+						editor.commit();
+					}
+					else {
+						editor.putBoolean("text editor color", true);
+						editor.commit();
+					}
+
+					Toast.makeText(getApplicationContext(),"Color : "+settings.getBoolean("text editor color",false),Toast.LENGTH_LONG).show();
+				}
+			});
+
 	}
 
 	public void telinga(int data) {

@@ -71,13 +71,14 @@ public class MainBrowser extends Activity {
     private boolean isLoading = false;
     private InputMethodManager imm;
     private ValueCallback<Uri> mFileChooserCallback;
+    private ClipboardManager clip;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main_browser);
 		
+        clip = (ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
 		edHasil = (EditText) findViewById(R.id.browser_hasil);
 		edUrl = (EditText) findViewById(R.id.browser_url);
 
@@ -86,7 +87,6 @@ public class MainBrowser extends Activity {
 				CallWebPageTask task = new CallWebPageTask();
 	   			task.applicationContext = MainBrowser.this;
 
-	   			ClipboardManager clip = (ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
 	   			String url = "http://10.42.0.1/client.php?main="+clip.getText().toString();
 	   			task.execute(new String[] { url });
 				Toast.makeText(this,"Upload text",Toast.LENGTH_LONG).show();
@@ -104,6 +104,15 @@ public class MainBrowser extends Activity {
                             url = edUrl.getText().toString();
                         }
                         task.execute(new String[] { url });
+                        return true;
+                    }
+                    return false;
+                }
+            });
+        edHasil.setOnKeyListener(new View.OnKeyListener() {
+                public boolean onKey(View v, int keyCode, KeyEvent keyEvent) {
+                    if (keyEvent.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
+                        // update
                         return true;
                     }
                     return false;

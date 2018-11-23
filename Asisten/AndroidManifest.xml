@@ -26,9 +26,17 @@
 		<activity android:name="com.status.TaskList" ></activity>
 		<activity android:name="com.cpu.memori.MemoriActivity" ></activity>
 		<activity android:name=".Pengaturan" ></activity>
-        <activity android:name=".MainBrowser" ></activity>
         <activity android:name=".MainServer" ></activity>
         <activity android:name=".MainTerminal" ></activity>
+        <activity android:name=".MainBrowser" android:label="al browser">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="http"/>
+                <data android:scheme="https"/>
+            </intent-filter>
+        </activity>
         <activity android:name=".MainEditor" ></activity>
         <activity android:name=".MainFileManager" android:label="Editor al">
             <intent-filter>

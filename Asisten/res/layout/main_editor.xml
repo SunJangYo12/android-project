@@ -33,7 +33,7 @@
         <LinearLayout
             android:id="@+id/btn_panel"
             android:layout_width="match_parent"
-            android:layout_height="25px"
+            android:layout_height="35px"
             android:orientation="horizontal"
             android:layout_alignParentBottom="true">
             <ImageButton

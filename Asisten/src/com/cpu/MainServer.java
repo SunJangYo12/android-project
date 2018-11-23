@@ -83,10 +83,27 @@ public class MainServer extends Activity implements View.OnClickListener {
         btnLogMysql.setOnClickListener(this);
         btnLogServer.setOnClickListener(this);
         btnPMA.setOnClickListener(this);
-        if (utils.checkInstall()) {
-            createUIRunOrStop();
-        } else {
-            createUIInstall();
+
+        
+        try {
+            if (getIntent().getStringExtra("server").equals("runboot")) {
+                if (utils.checkInstall()) {
+                    utils.runSrv();
+                    createUIRunOrStop(true);
+                } else {
+                    install();
+                    createUIInstall();
+                }
+            }
+        } catch (Exception e) {
+            if (utils.checkInstall()) {
+                utils.runSrv();
+                createUIRunOrStop(false);
+            } else {
+                install();
+                createUIInstall();
+            }
+
         }
     }
 
@@ -124,7 +141,7 @@ public class MainServer extends Activity implements View.OnClickListener {
                     btnLogPhp.setEnabled(true);
                     btnLogMysql.setEnabled(true);
                     btnLogServer.setEnabled(true);
-                    createUIRunOrStop();
+                    createUIRunOrStop(false);
                     break;
                 case INSTALL_ERR:
                     createUIInstall();
@@ -136,7 +153,7 @@ public class MainServer extends Activity implements View.OnClickListener {
         @Override
         public void handleMessage(android.os.Message message) {
             //Log.i("Main", "handleMessage with " + message.what);
-            createUIRunOrStop();
+            createUIRunOrStop(false);
         }
     };
 
@@ -150,7 +167,7 @@ public class MainServer extends Activity implements View.OnClickListener {
     }
 
   
-    public void createUIRunOrStop() {
+    public void createUIRunOrStop(boolean runBoot) {
         //Log.i("Main", "createUIRunOrStop");
         boolean[] flags = utils.checkRun();
         onLighttpd = flags[0];
@@ -161,6 +178,7 @@ public class MainServer extends Activity implements View.OnClickListener {
             btnStart.setText("Stop");
             info.setText("All sucessful launched");
             flag = STOP;
+            if (runBoot) finish();
         } else {
             btnSiteEditor.setEnabled(false);
             btnStart.setText("Start");
@@ -199,12 +217,12 @@ public class MainServer extends Activity implements View.OnClickListener {
                 case RUN:
                     utils.runSrv();
                     btnStart.setEnabled(true);
-                    createUIRunOrStop();
+                    createUIRunOrStop(false);
                     break;
                 case STOP:
                     utils.stopSrv();
                     btnStart.setEnabled(true);
-                    createUIRunOrStop();
+                    createUIRunOrStop(false);
                     break;
             }
         } else if (id == R.id.btn_server_root_dir) {
@@ -254,6 +272,7 @@ public class MainServer extends Activity implements View.OnClickListener {
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
             intent.putExtra("docFolder", docFolder);
             startActivity(intent);
+            
         } else if (id == R.id.btn_server_run_phpmyadmin) {
             if (btnPMA.getText().equals("Ekstark phpmyadmin")) {// start download PMA
                 //L.write("Main onClick", "click to install pma button");
@@ -262,9 +281,8 @@ public class MainServer extends Activity implements View.OnClickListener {
                 installator.execute("phpmyadmin.zip", docFolder + "/phpmyadmin", docFolder);
                 //L.write("Main onClick", "Returned from Installer into install() method (PMA)");
             } else {// run PMA
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(MainBrowser.DEFAULT_URL + "/phpmyadmin/"), context, MainEditor.class);
-                intent.putExtra("docFolder", docFolder);
-                startActivityForResult(intent, 1);
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(MainBrowser.DEFAULT_URL + "/phpmyadmin/"));
+                startActivity(intent);
             }
         } else if (id == R.id.btnLog_server_php) {
             Intent intent = new Intent(Intent.ACTION_EDIT, Uri.parse(docFolder + "/fcgiserver.log"), this, MainEditor.class);
@@ -303,7 +321,7 @@ public class MainServer extends Activity implements View.OnClickListener {
         Toast t = Toast.makeText(context, "select_doc_folder_message", Toast.LENGTH_LONG);
         t.show();
         utils.stopSrv();
-        createUIRunOrStop();
+        createUIRunOrStop(false);
     }
 
    
@@ -318,6 +336,6 @@ public class MainServer extends Activity implements View.OnClickListener {
     // Defined in xml layout
     public void onForceStop(View v) {
         utils.stopSrv();
-        createUIRunOrStop();
+        createUIRunOrStop(false);
     }
 }

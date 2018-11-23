@@ -139,6 +139,7 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
     private String currPath, prevPath;
     private Map<String, Integer> mapExt = new HashMap<String, Integer>();
     private boolean chooseFile = false;
+    private SharedPreferences settings;
     private AlphabeticComparator alphabeticComparator;
     private Map<String, Integer> supportedFiles = new HashMap<String, Integer>() {
         {
@@ -168,6 +169,7 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
         setContentView(R.layout.main_filemanager);
+        settings = getSharedPreferences("Settings", 0);
 
         try {
             Intent intent = getIntent();
@@ -176,7 +178,9 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
 
             String ext = getExtension(surl[1]);
             Intent iedit = new Intent(Intent.ACTION_EDIT, Uri.parse(surl[1]), this, MainEditor.class);
-            iedit.putExtra(MainEditor.CODE_TYPE, supportedFiles.get(ext));
+            if (settings.getBoolean("text editor color",false)) {
+                iedit.putExtra(MainEditor.CODE_TYPE, supportedFiles.get(ext));
+            }
             startActivityForResult(iedit, MainEditor.REQUEST_VIEW_SOURCE);
             finish();
         }
