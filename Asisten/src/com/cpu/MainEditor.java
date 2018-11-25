@@ -224,13 +224,13 @@ public class MainEditor extends Activity implements View.OnClickListener {
 	public void onClick(View v) {
 		switch (v.getId()) {
 			case R.id.editor_btnRemove:
-				finish();
+				//finish();
 				break;
             case R.id.editor_btnPrev:
-                finish();
+                //finish();
                 break;
             case R.id.editor_btnNext:
-                finish();
+                //finish();
                 break;
             case R.id.editor_btnSave:
                 saveCode();

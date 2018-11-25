@@ -15,121 +15,6 @@ import android.view.LayoutInflater;
 import java.io.IOException;
 import java.util.*;
 
-class MyAdapter extends BaseAdapter {
-
-    private ArrayList<Item> list = new ArrayList<Item>();
-    private Context context;
-    private LayoutInflater li;
-
-    public MyAdapter(Context context, ArrayList<Item> arr) {
-        if (arr != null) {
-            list = arr;
-        }
-        this.context = context;
-        li = LayoutInflater.from(context);
-    }
-
-    public int getCount() {
-        return list.size();
-    }
-
-    public Object getItem(int position) {
-        return list.get(position);
-    }
-
-    public long getItemId(int position) {
-        return position;
-    }
-
-    public View getView(int position, View view, ViewGroup viewGroup) {
-        ViewHolder holder;
-        if (view == null) {
-            view = li.inflate(R.layout.list_row, null);
-            holder = new ViewHolder();
-            holder.imageView = (ImageView) view.findViewById(R.id.list_image);
-            holder.header = (TextView) view.findViewById(R.id.list_header);
-            holder.subheader = (TextView) view.findViewById(R.id.list_subheader);
-            view.setTag(holder);
-        } else {
-            holder = (ViewHolder) view.getTag();
-        }
-        Item item = list.get(position);
-        
-
-        holder.imageView.setImageResource(item.getImageId());
-        holder.header.setText(item.getHeader());
-        holder.subheader.setText(item.getSubheader());
-        return view;
-    }
-    
-    private static class ViewHolder {
-        ImageView imageView;
-        TextView header, subheader;
-    }
-}
-
-
-class Item implements SortItem {
-
-    private int imageId, type;
-    private String header, subheader;
-
-    public Item(int imageId_, String header_, String subheader_, int type_) {
-        imageId = imageId_;
-        header = header_;
-        subheader = subheader_;
-        type = type_;
-    }
-
-    public void setType(int type) {
-        this.type = type;
-    }
-
-    public int getType() {
-        return type;
-    }
-
-    public void setHeader(String header) {
-        this.header = header;
-    }
-
-    public String getHeader() {
-        return header;
-    }
-
-    public void setSubheader(String subheader) {
-        this.subheader = subheader;
-    }
-
-    public String getSubheader() {
-        return subheader;
-    }
-
-    public void setImageId(int imageId) {
-        this.imageId = imageId;
-    }
-
-    public int getImageId() {
-        return imageId;
-    }
-
-    public String getSortField() {
-        return header;
-    }
-}
-
-interface SortItem {
-
-    public String getSortField();
-}
-
-class AlphabeticComparator implements Comparator<SortItem> {
-
-    public int compare(SortItem p1, SortItem p2) {
-        return p1.getSortField().compareToIgnoreCase(p2.getSortField());
-    }
-}
-
 public class MainFileManager extends Activity implements AdapterView.OnItemClickListener {
 
     private ListView listView;
@@ -185,7 +70,12 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
             finish();
         }
         catch (Exception e) {
-            Toast.makeText(this, "ERRoR intent", Toast.LENGTH_LONG).show();
+            try {
+                String url = getIntent().getStringExtra("path");
+                currPath = url;
+                Toast.makeText(this, "ERRoR intent "+url, Toast.LENGTH_LONG).show();
+            }
+            catch (Exception ef) {}
         } 
 
         //L.write(tag, "onCreate started with " + currPath);
@@ -416,3 +306,120 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
         return null;
     }
 }
+
+
+class MyAdapter extends BaseAdapter {
+
+    private ArrayList<Item> list = new ArrayList<Item>();
+    private Context context;
+    private LayoutInflater li;
+
+    public MyAdapter(Context context, ArrayList<Item> arr) {
+        if (arr != null) {
+            list = arr;
+        }
+        this.context = context;
+        li = LayoutInflater.from(context);
+    }
+
+    public int getCount() {
+        return list.size();
+    }
+
+    public Object getItem(int position) {
+        return list.get(position);
+    }
+
+    public long getItemId(int position) {
+        return position;
+    }
+
+    public View getView(int position, View view, ViewGroup viewGroup) {
+        ViewHolder holder;
+        if (view == null) {
+            view = li.inflate(R.layout.list_row, null);
+            holder = new ViewHolder();
+            holder.imageView = (ImageView) view.findViewById(R.id.list_image);
+            holder.header = (TextView) view.findViewById(R.id.list_header);
+            holder.subheader = (TextView) view.findViewById(R.id.list_subheader);
+            view.setTag(holder);
+        } else {
+            holder = (ViewHolder) view.getTag();
+        }
+        Item item = list.get(position);
+        
+
+        holder.imageView.setImageResource(item.getImageId());
+        holder.header.setText(item.getHeader());
+        holder.subheader.setText(item.getSubheader());
+        return view;
+    }
+    
+    private static class ViewHolder {
+        ImageView imageView;
+        TextView header, subheader;
+    }
+}
+
+
+class Item implements SortItem {
+
+    private int imageId, type;
+    private String header, subheader;
+
+    public Item(int imageId_, String header_, String subheader_, int type_) {
+        imageId = imageId_;
+        header = header_;
+        subheader = subheader_;
+        type = type_;
+    }
+
+    public void setType(int type) {
+        this.type = type;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public void setHeader(String header) {
+        this.header = header;
+    }
+
+    public String getHeader() {
+        return header;
+    }
+
+    public void setSubheader(String subheader) {
+        this.subheader = subheader;
+    }
+
+    public String getSubheader() {
+        return subheader;
+    }
+
+    public void setImageId(int imageId) {
+        this.imageId = imageId;
+    }
+
+    public int getImageId() {
+        return imageId;
+    }
+
+    public String getSortField() {
+        return header;
+    }
+}
+
+interface SortItem {
+
+    public String getSortField();
+}
+
+class AlphabeticComparator implements Comparator<SortItem> {
+
+    public int compare(SortItem p1, SortItem p2) {
+        return p1.getSortField().compareToIgnoreCase(p2.getSortField());
+    }
+}
+

