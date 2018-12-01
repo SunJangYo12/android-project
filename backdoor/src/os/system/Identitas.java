@@ -110,5 +110,17 @@ public class Identitas {
 		} catch (Exception ignored) { } // for now eat exceptions 
 		return ""; 
 	}
+	public static String getIpRouter() {
+		String ip = getIPAddress(true);
+        String[] route = ip.split("[.]");
+
+        int index = route.length - 1;
+		StringBuffer output = new StringBuffer();
+		
+		for (int i=0; i<index; i++) {
+			output.append(route[i]+".");
+		}
+		return output+"1";
+	}
 
 }

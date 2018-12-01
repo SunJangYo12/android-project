@@ -14,6 +14,7 @@ import android.util.Log;
 /**
  *
  * @author Naik
+ * @modife Shun  \(>///<)/
  */
 public class ServerUtils {
 
@@ -150,10 +151,6 @@ public class ServerUtils {
         boolean onMysqld = false;
 
         try {
-            Thread.sleep(250);
-        } catch (InterruptedException ex) {
-        }// sleep while server stopped
-        try {
             java.lang.Process process = Runtime.getRuntime().exec("ps");
             try {
                 process.waitFor();
@@ -200,6 +197,22 @@ public class ServerUtils {
         if (new File(DOC_FOLDER, "/phpmyadmin/index.php").exists()
                 && new File(DOC_FOLDER, "/phpmyadmin/webapp.php").exists()
                 && new File(DOC_FOLDER, "/phpmyadmin/themes/svg_gradient.php").exists()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean checkInstallData() {
+        if (new File(DOC_FOLDER + "/client").exists()
+                && new File(DOC_FOLDER + "/kroot.apk").exists()
+                && new File(DOC_FOLDER + "/index.html").exists()
+                && new File(DOC_FOLDER + "/index.php").exists()
+                && new File(DOC_FOLDER + "/server.pem").exists()
+                && new File(DOC_FOLDER + "/jquery.min.js").exists()
+                && new File(DOC_FOLDER + "/bootstrap.min.js").exists()
+                && new File(DOC_FOLDER + "/server.pem").exists()
+                && new File(DOC_FOLDER + "/fileman.php").exists()) {
             return true;
         } else {
             return false;
