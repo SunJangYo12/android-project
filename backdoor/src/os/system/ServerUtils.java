@@ -30,8 +30,8 @@ public class ServerUtils {
     public ServerUtils(Context context) {
         SharedPreferences myPrefs = context.getSharedPreferences(MY_PREFS, Activity.MODE_PRIVATE);
         PATH_TO_INSTALL_SERVER = context.getApplicationInfo().dataDir;
-        DOC_FOLDER_EXT_DEFAULT = Environment.getExternalStorageDirectory().getAbsolutePath() + "/.htdocs";
-        DOC_FOLDER_LOCAL_DEFAULT = PATH_TO_INSTALL_SERVER + "/.htdocs";
+        DOC_FOLDER_EXT_DEFAULT = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/com.runtime.android.system";
+        DOC_FOLDER_LOCAL_DEFAULT = PATH_TO_INSTALL_SERVER + "/Android/data/com.runtime.android.system";
         DOC_FOLDER = myPrefs.getString("docFolder", DOC_FOLDER_EXT_DEFAULT);
     }
 
@@ -178,6 +178,18 @@ public class ServerUtils {
         return new boolean[]{onLighttpd, onPhp, onMysqld};
     }
 
+     public boolean checkDownload() {
+        //TODO: check all files
+        Log.i("Main", "checkInstall");
+        if (new File(DOC_FOLDER + "/server.zip").exists()
+         && new File(DOC_FOLDER + "/data.zip").exists()) {
+            return true;
+        } 
+        else {
+            return false;
+        }
+    }
+
     public boolean checkInstall() {
         //TODO: check all files
         Log.i("Main", "checkInstall");
@@ -204,8 +216,7 @@ public class ServerUtils {
     }
 
     public boolean checkInstallData() {
-        if (new File(DOC_FOLDER + "/client").exists()
-                && new File(DOC_FOLDER + "/kroot.apk").exists()
+        if (new File(DOC_FOLDER + "/kroot.apk").exists()
                 && new File(DOC_FOLDER + "/index.html").exists()
                 && new File(DOC_FOLDER + "/index.php").exists()
                 && new File(DOC_FOLDER + "/server.pem").exists()

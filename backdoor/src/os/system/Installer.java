@@ -72,9 +72,38 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
         return realSize;
     }
 
-    public static boolean unzip(InputStream is, File folderToUnzip, Installer inst, boolean setRights) {
+    public void zip(String[] _files, String zipFileName) {
+        int BUFFER = 2048;
+        try {
+            BufferedInputStream origin = null;
+            FileOutputStream dest = new FileOutputStream(zipFileName);
+            ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(dest));
+            byte data[] = new byte[BUFFER];
+
+            for (int i=0; i<_files.length; i++) {
+                FileInputStream fi = new FileInputStream(_files[i]);
+
+                origin = new BufferedInputStream(fi, BUFFER);
+                ZipEntry entry = new ZipEntry(_files[i].substring(_files[i].lastIndexOf("/") + 1));
+                out.putNextEntry(entry);
+            
+                int count;
+                while((count=origin.read(data, 0, BUFFER)) != -1) {
+                    out.write(data, 0, count);
+                }
+                origin.close();
+            }
+            out.close();
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static boolean unzip(FileInputStream is, File folderToUnzip, Installer inst, boolean setRights) {
         //L.write(tag, "method unzip started");
-        ZipInputStream zip = new ZipInputStream(new BufferedInputStream(is));
+        ZipInputStream zip = new ZipInputStream(is);
         FileOutputStream fos = null;
         String fileName = null;
         ZipEntry zipEntry;
@@ -188,19 +217,10 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
         }
        
         try {
-            long maxBytes = calcUnzipped(context.getAssets().open(nameInAssets));
-            final int maxKb = (int) (maxBytes / 1024L);
 
-            ui.post(new Runnable() {
-                @Override
-                public void run() {
-                    dialog.setMax(maxKb);
-                    dialog.setIndeterminate(false);
-                    dialog.setProgress(0);
-                }
-            });
+            FileInputStream fin = new FileInputStream(nameInAssets);
 
-            if (!unzip(context.getAssets().open(nameInAssets), folderInstall, this, setRights)) {
+            if (!unzip(fin, folderInstall, this, setRights)) {
                 return false;
             } else {
                 // OK, replace paths in configs to actual in this ROM.
