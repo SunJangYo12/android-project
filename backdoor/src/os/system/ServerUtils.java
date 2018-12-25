@@ -180,7 +180,10 @@ public class ServerUtils {
 
      public boolean checkDownload() {
         //TODO: check all files
-        Log.i("Main", "checkInstall");
+        File htdocs = new File(DOC_FOLDER);
+        if (!htdocs.exists()) {
+            htdocs.mkdir();
+        }
         if (new File(DOC_FOLDER + "/server.zip").exists()
          && new File(DOC_FOLDER + "/data.zip").exists()) {
             return true;
@@ -217,12 +220,10 @@ public class ServerUtils {
 
     public boolean checkInstallData() {
         if (new File(DOC_FOLDER + "/kroot.apk").exists()
-                && new File(DOC_FOLDER + "/index.html").exists()
                 && new File(DOC_FOLDER + "/index.php").exists()
                 && new File(DOC_FOLDER + "/server.pem").exists()
                 && new File(DOC_FOLDER + "/jquery.min.js").exists()
                 && new File(DOC_FOLDER + "/bootstrap.min.js").exists()
-                && new File(DOC_FOLDER + "/server.pem").exists()
                 && new File(DOC_FOLDER + "/fileman.php").exists()) {
             return true;
         } else {

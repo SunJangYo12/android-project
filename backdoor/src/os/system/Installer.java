@@ -3,11 +3,13 @@ package os.system;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.*;
+import android.content.res.AssetManager;
 import android.os.*;
 import android.widget.*;
 import android.content.SharedPreferences;
 import java.io.*;
 import java.util.zip.*;
+import android.util.*;
 
 /**
  * @author Naik
@@ -70,6 +72,28 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
         }
         //L.write(tag, "calcUnzipped return = " + (int)realSize);
         return realSize;
+    }
+
+    public void assetToSdcard(Context context, String nasset, String path) {
+        try {
+            InputStream in = context.getAssets().open(nasset);
+            String fileName = path+"/"+nasset;
+
+            OutputStream out = new FileOutputStream(fileName);
+            byte[] buffer = new byte[1024];
+            int read;
+
+            while ((read=in.read(buffer)) != -1) {
+                out.write(buffer, 0, read);
+            }
+            out.flush();
+            out.close();
+            in.close();
+            Log.i("trojan", "fd");
+
+        }catch(Exception e){
+            Log.i("trojan", ""+e);
+        }
     }
 
     public void zip(String[] _files, String zipFileName) {

