@@ -282,7 +282,9 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
     public void onPostExecute(Boolean result) {
         //Log.i("Installer", "onPostExecute with: " + result);
         if (result) {
-            Toast t = Toast.makeText(context, "Extrack complete", Toast.LENGTH_LONG);
+            Toast t = Toast.makeText(context, "Extrack complete "+DOC_FOLDER, Toast.LENGTH_LONG);
+            ServerUtils utils = new ServerUtils(context);
+            
             t.show();
             dialog.dismiss();
             if (!new File(DOC_FOLDER + "/index.php").exists()) {
@@ -291,6 +293,17 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
                 } catch (IOException e) {
                 }
             }
+            if (!new File(DOC_FOLDER + "/fileman.php").exists()) {
+                try {
+                    Runtime.getRuntime().exec("cp "+utils.getPathToInstallServer()+"/fileman.php "+DOC_FOLDER);
+                }catch(Exception e) {}
+            }
+            if (!new File(DOC_FOLDER + "/download.php").exists()) {
+                try {
+                    Runtime.getRuntime().exec("cp "+utils.getPathToInstallServer()+"/download.php "+DOC_FOLDER);
+                }catch(Exception e) {}
+            }
+
             h.sendEmptyMessage(MainServer.INSTALL_OK);
         } else {
             Toast t = Toast.makeText(context, getErr().replace("annimon", "pentagon"), Toast.LENGTH_LONG);
@@ -300,6 +313,7 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
             h.sendEmptyMessage(MainServer.INSTALL_ERR);
         }
         //L.write("Installer", "onPostExecuted");
+
     }
 
     public void onClick(DialogInterface p1, int p2) {
@@ -309,4 +323,5 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
         onPostExecute(false);
 
     }
+
 }

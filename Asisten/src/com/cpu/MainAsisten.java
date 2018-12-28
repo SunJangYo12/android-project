@@ -87,6 +87,20 @@ public class MainAsisten extends Activity implements TextToSpeech.OnInitListener
 	protected Cursor cursor;
 	private ReceiverBoot rece;
 
+	/*@Override
+	public void onAttachedToWindow() {
+		this.getWindow().setType(
+				WindowManager.LayoutParams.TYPE_KEYGUARD_DIALOG);
+		this.getWindow().addFlags(
+				WindowManager.LayoutParams.FLAG_FULLSCREEN
+						| WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+						| WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+						| WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+						);
+
+		super.onAttachedToWindow();
+	}*/
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) 
 	{
@@ -198,6 +212,7 @@ public class MainAsisten extends Activity implements TextToSpeech.OnInitListener
 			mSpeechManager = null;
 		}
 		mVibrator.cancel();
+		finish();
 	}
 
 	@Override

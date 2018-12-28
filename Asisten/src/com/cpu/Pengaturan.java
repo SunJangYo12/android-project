@@ -162,6 +162,13 @@ public class Pengaturan extends Activity
 			});
 
 	}
+	@Override
+    public void onBackPressed()
+    {
+        // TODO: Implement this method
+        super.onBackPressed();
+        finish();
+    }
 
 	public void telinga(int data) {
 		index = data;

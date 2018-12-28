@@ -73,7 +73,6 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
             try {
                 String url = getIntent().getStringExtra("path");
                 currPath = url;
-                Toast.makeText(this, "ERRoR intent "+url, Toast.LENGTH_LONG).show();
             }
             catch (Exception ef) {}
         } 
@@ -103,6 +102,13 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
     public void onRestart() {
         super.onRestart();
         //L.write(tag, "onRestart()");
+    }
+    @Override
+    public void onBackPressed()
+    {
+        // TODO: Implement this method
+        super.onBackPressed();
+        finish();
     }
 
     private void readFolder(String folderStr) {

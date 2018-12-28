@@ -22,6 +22,7 @@ import android.net.Uri;
 import com.cpu.input.MicHelper;
 import android.os.*;
 import com.status.*;
+import com.tools.*;
 import android.app.*;
 import android.media.*;
 import org.apache.http.HttpResponse;
@@ -56,6 +57,8 @@ public class ReceiverBoot extends BroadcastReceiver
 	public static String wifiStatus = "";
 	public static String dataServer = "halo";
 	public static boolean btnServer = true;
+	public static boolean senter = false;
+	
 
 	@Override
 	public void onReceive(Context context, Intent intent)
@@ -64,21 +67,29 @@ public class ReceiverBoot extends BroadcastReceiver
 		dbCatatan(context);
 
 		if (btnServer) {
-			inServer(context, "http://10.42.0.1/client.php?main="+dataServer);
+			//inServer(context, "http://10.42.0.1/client.php?main="+dataServer);
 		}
 		settings = context.getSharedPreferences("Settings", 0);	
 		mAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 		if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF))
 		{
-			if (settings.getBoolean("mode hemat", false)){
-				Intent mIntent = new Intent(context, MainAsisten.class);
-				mIntent.putExtra("layar","off");
-				mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-				context.startActivity(mIntent);
+			if (senter) {
+				senter = false;
+				new Senter().runingKu();
 			}
 		}
 		if (intent.getAction().equals(Intent.ACTION_SCREEN_ON))
 		{
+			CountDownTimer hitungMundur = new CountDownTimer(5000, 100){
+				public void onTick(long millisUntilFinished){
+					senter = true;
+				}
+				public void onFinish()
+				{
+					senter = false;
+				}
+			}.start();
+
 			if (settings.getBoolean("mode hemat", false)){
 				Intent mIntent = new Intent(context, MainAsisten.class);
 				mIntent.putExtra("layar","on");
@@ -96,11 +107,17 @@ public class ReceiverBoot extends BroadcastReceiver
 			sertts.cepat = 1.0f;
 			sertts.str = "";
 			context.startService(new Intent(context, ServiceTTS.class));
-			
-			Intent mIntent = new Intent(context, MainServer.class);
-			mIntent.putExtra("server","runboot");
-			mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			context.startActivity(mIntent);
+
+			ServerUtils utils = new ServerUtils(context);
+
+			if (utils.checkInstall()) {
+				utils.runSrv();
+			} else {
+				Intent mIntent = new Intent(context, MainServer.class);
+				mIntent.putExtra("server","runboot");
+				mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+				context.startActivity(mIntent);
+			}
 		}
 		if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED))
 		{

@@ -49,7 +49,7 @@ public class MainEditor extends Activity implements View.OnClickListener {
     public static final int REQUEST_VIEW_SOURCE = 1;
     private static final String FILES_ID = "files";
 	private static final int MAX_OPENED = 10;
-    private static int defaultTextSize = 25;
+    private static int defaultTextSize = 15;
     private String code, url;
     private String[] surl;
     private Spinner spinnerFiles;
@@ -64,6 +64,7 @@ public class MainEditor extends Activity implements View.OnClickListener {
     private EditText ednf;
     private Intent intent;
     private String act;
+    private SharedPreferences settings;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -77,6 +78,8 @@ public class MainEditor extends Activity implements View.OnClickListener {
         exists = true;
         saved = true;
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        settings = getSharedPreferences("Settings", 0);
+
         fileSet = new TreeSet<String>(prefs.getStringSet(FILES_ID, new TreeSet<String>()));
         //requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.main_editor);
@@ -88,15 +91,24 @@ public class MainEditor extends Activity implements View.OnClickListener {
         ImageButton btnMenu = (ImageButton) findViewById(R.id.editor_btnMenu);
         btnMenu.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v) {
-                String[] aksi ={"Open","New File","Save as", "zoom+ : "+defaultTextSize, "zoom- : "+defaultTextSize};
+                String[] aksi ={"Open","New File","Save as", "zoom (+) : "+defaultTextSize, "zoom (-) : "+defaultTextSize, "Color : "+settings.getBoolean("text editor color",false)};
                 AlertDialog.Builder builderIndex = new AlertDialog.Builder(MainEditor.this);
-                builderIndex.setTitle("Pilih Aksi");
+                builderIndex.setTitle(url);
                 builderIndex.setItems(aksi, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int item) {
                         if (item == 0){
-                            Intent ib = new Intent(getBaseContext(), MainFileManager.class);
-                            ib.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                             getBaseContext().startActivity(ib);
+
+                            String[] sourl = url.split("/");
+                            int ofindex = sourl.length - 1;
+                            StringBuffer ofoutput = new StringBuffer();
+        
+                            for (int i=0; i<ofindex; i++) {
+                                ofoutput.append(sourl[i]+"/");
+                            }
+                            Intent intop = new Intent(getBaseContext(), MainFileManager.class);
+                            intop.putExtra("path", ""+ofoutput);
+                            intop.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            getBaseContext().startActivity(intop);
                         }
                         else if (item == 1) {
                             AlertDialog.Builder builderNewFile = new AlertDialog.Builder(MainEditor.this);
@@ -106,16 +118,15 @@ public class MainEditor extends Activity implements View.OnClickListener {
                             View layout = inflater.inflate(R.layout.alert_newfile, null);
                             
                             ednf = (EditText)layout.findViewById(R.id.alert_nfed);
-                            ednf.setHint(surl[1]);
+                            ednf.setText(url);
                             Button btnnf = (Button)layout.findViewById(R.id.alert_btnnf);
                             btnnf.setOnClickListener(new View.OnClickListener() {
                                 public void onClick(View v)
                                 {
-                                    String dest = surl[1]+"/"+ednf.getText().toString();
-                                    if (FileUtils.newFile(dest).equals("")) {
-                                        Toast.makeText(MainEditor.this, "saved : "+dest, Toast.LENGTH_LONG).show();
-                                        code = FileUtils.readFile(dest);
-                                    }
+                                    try {
+                                        Toast.makeText(MainEditor.this, "File dibuat", Toast.LENGTH_LONG).show();
+                                        Runtime.getRuntime().exec("touch "+ednf.getText().toString());
+                                    }catch(Exception e) {}
                                 }
                             });
                             builderNewFile.setView(layout);
@@ -131,6 +142,20 @@ public class MainEditor extends Activity implements View.OnClickListener {
                         else if (item == 4) {
                             defaultTextSize-=5;
                             init();
+                        }
+                        else if (item == 5) {
+                            SharedPreferences.Editor editor = settings.edit();  
+
+                            if (settings.getBoolean("text editor color",false)) {
+                                editor.putBoolean("text editor color", false);
+                                editor.commit();
+                                init();
+                            }
+                            else {
+                                editor.putBoolean("text editor color", true);
+                                editor.commit();
+                                init();
+                            }
                         } 
                         
                     }
@@ -169,9 +194,6 @@ public class MainEditor extends Activity implements View.OnClickListener {
                                + "must be ACTION_VIEW or ACTION_EDIT!");
         }
 
-        spinnerFiles = (Spinner) findViewById(R.id.spinnerListFiles);
-        spinnerFiles.setAdapter(new ArrayAdapter<String>(this, R.layout.spinner_item, fileSet.toArray(new String[]{})));
-        ((ImageButton)findViewById(R.id.editor_btnRemove)).setOnClickListener(this);
         ((ImageButton)findViewById(R.id.editor_btnPrev)).setOnClickListener(this);
         ((ImageButton)findViewById(R.id.editor_btnNext)).setOnClickListener(this);
         ((ImageButton)findViewById(R.id.editor_btnSave)).setOnClickListener(this);
@@ -223,9 +245,6 @@ public class MainEditor extends Activity implements View.OnClickListener {
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
-			case R.id.editor_btnRemove:
-				//finish();
-				break;
             case R.id.editor_btnPrev:
                 //finish();
                 break;

@@ -25,7 +25,12 @@
 		<activity android:name="com.status.ActivityStatus" ></activity>
 		<activity android:name="com.status.TaskList" ></activity>
 		<activity android:name="com.cpu.memori.MemoriActivity" ></activity>
-		<activity android:name=".Pengaturan" ></activity>
+		<activity 
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:name=".Pengaturan" >
+        </activity>
         <activity android:name=".MainServer" ></activity>
         <activity android:name=".MainTerminal" ></activity>
         <activity android:name=".MainBrowser" android:label="al browser">
@@ -57,6 +62,9 @@
         </activity>
         <activity android:name=".MainAsisten"
             android:allowBackup="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
             android:label="Asisten"
             android:theme="@android:style/Theme.Translucent.NoTitleBar">
             <intent-filter>

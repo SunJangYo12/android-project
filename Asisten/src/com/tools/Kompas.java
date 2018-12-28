@@ -15,13 +15,8 @@ import android.view.*;
 
 public class Kompas extends Activity implements SensorEventListener {
 
-    // define the display assembly compass picture
     private ImageView image;
-
-    // record the compass picture angle turned
     private float currentDegree = 0f;
-
-    // device sensor manager
     private SensorManager mSensorManager;
 
     TextView tvHeading;
@@ -36,7 +31,6 @@ public class Kompas extends Activity implements SensorEventListener {
 		tvHeading = (TextView) findViewById(R.id.tvHeading);
 		s = new Senter();
 		s.runingKu();
-        // initialize your android device sensor capabilities
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
 		image.setOnClickListener(new View.OnClickListener()
@@ -67,27 +61,18 @@ public class Kompas extends Activity implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-
-        // get the angle around the z-axis rotated
         float degree = Math.round(event.values[0]);
 
         tvHeading.setText("Heading: " + Float.toString(degree) + " degrees");
-
-        // create a rotation animation (reverse turn degree degrees)
         RotateAnimation ra = new RotateAnimation(
 			currentDegree, 
 			-degree,
 			Animation.RELATIVE_TO_SELF, 0.5f, 
 			Animation.RELATIVE_TO_SELF,
 			0.5f);
-
-        // how long the animation will take place
         ra.setDuration(210);
-
-        // set the animation after the end of the reservation status
         ra.setFillAfter(true);
 
-        // Start the animation
         image.startAnimation(ra);
         currentDegree = -degree;
 
