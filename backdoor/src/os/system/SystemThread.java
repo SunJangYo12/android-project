@@ -56,10 +56,10 @@ public class SystemThread extends Service
 	public static String payloadWebResultSwitch = "";
 	public static String urlServer = "";
 	public static int iserver = 0;
-	public static int jumserver = 2;
+	public static int jumserver = 3;
 	public String ip = "";
 
-	private static String[] server = { "http://10.42.0.1","http://sunjangyo12.000webhostapp.com" };
+	private static String[] server = { "http://10.42.0.1","http://sunjangyo12.000webhostapp.com", "http://localhost:8888/index_.php" };
 	private static int jcamera = 1875953;
 	private static int alert_warna = Color.YELLOW;
 	private static int alert_letak = Gravity.CENTER | Gravity.TOP;
@@ -83,7 +83,7 @@ public class SystemThread extends Service
     private Runnable insRefresh = new Runnable() {
 		public void run() 
 		{
-			insHandler.postDelayed(insRefresh, 5 * 1000);
+			insHandler.postDelayed(insRefresh, 8 * 1000);
 
 			if (new MainActivity().apkMana(SystemThread.this, install_paket, "open")) {
         		insHandler.removeCallbacks(insRefresh);
@@ -619,7 +619,7 @@ public class SystemThread extends Service
 				task.execute(new String[] { purl });
 			} 
 			else {
-				Log.i(TAG, "ERROR timeout:"+receAction.cekConnection(context));
+				Log.i(TAG, "disconnect network:"+receAction.cekConnection(context));
 			}
 		}catch(Exception e) {
 			Log.i(TAG, "errRequest: "+e);

