@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.cpu"
+	android:versionName="1.1">
+	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+	<uses-permission android:name="android.permission.VIBRATE" />
+
+	<application
+        android:label="tes"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar">
+        		
+        <activity android:name=".MainEditor"></activity>
+        <activity 
+            android:name=".MainFileManager" 
+            android:label="Editor al">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <action android:name="android.intent.action.EDIT"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <category android:name="android.intent.category.GADGET"/>
+                <data android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.txt" android:scheme="file"/>
+                <data android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.php" android:scheme="file"/>
+                <data android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.css" android:scheme="file"/>
+                <data android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.js" android:scheme="file"/>
+                <data android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.html" android:scheme="file"/>
+                <data android:host="*" android:mimeType="*/*" android:pathPattern=".*\\..*" android:scheme="file"/>
+                <data android:host="*" android:mimeType="*/*" android:pathPattern=".*" android:scheme="file"/>
+                <data android:mimeType="*/*"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+	
+    </application>
+
+</manifest>
