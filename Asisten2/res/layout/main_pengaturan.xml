@@ -1,0 +1,60 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:background="#ffffff"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical">
+    <Button
+        android:layout_width="match_parent"
+        android:id="@+id/btn_Ptelinga"
+        android:layout_height="wrap_content"
+        android:text="MIC sensitif" />
+    <Button
+        android:layout_width="match_parent"
+        android:id="@+id/btn_Pmulut"
+        android:layout_height="wrap_content"
+        android:text="SUARA sensitif" />
+    <Button
+        android:layout_width="match_parent"
+        android:id="@+id/btn_Pdir"
+        android:layout_height="wrap_content"
+        android:text="Atur directory" />
+    <Button
+        android:layout_width="match_parent"
+        android:id="@+id/btn_local"
+        android:layout_height="wrap_content"
+        android:text="LOCAL SERVER" />
+    <Button
+        android:layout_width="match_parent"
+        android:id="@+id/btn_editor_color"
+        android:layout_height="wrap_content"
+        android:text="Text Editor Color" />
+    <Button
+        android:layout_width="match_parent"
+        android:id="@+id/pengaturan_touch"
+        android:layout_height="wrap_content"
+        android:text="Touch Asisten" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:id="@+id/pengaturan_catatan"
+        android:layout_height="wrap_content"
+        android:text="Catatan notif" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:id="@+id/edt_tempatC"
+        android:layout_height="wrap_content"
+        android:hint="TEMPAT cuaca" />
+    <EditText
+        android:layout_width="match_parent"
+        android:id="@+id/edt_negaraC"
+        android:layout_height="wrap_content"
+        android:hint="NEGARA cuaca" />
+    <Button
+        android:layout_width="match_parent"
+        android:id="@+id/btn_okeC"
+        android:layout_height="wrap_content"
+        android:text="OKE cuaca" />
+</LinearLayout>
+
