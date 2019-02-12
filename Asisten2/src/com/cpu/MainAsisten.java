@@ -57,7 +57,8 @@ public class MainAsisten extends Activity implements TextToSpeech.OnInitListener
 						 "6. file:\n   -file -> (cari: (bernama) (format) (external/internal) )\n\n\n"+
 						 "7. pengaturan:\n configure semua\n\n\n"+
 						 "8. install:\n install paket penting\n\n\n"+
-						 "9. apkmanager:\n copy/buka apk";
+						 "9. apkmanager:\n copy/buka apk\n\n\n"+
+						 "10. server: extrak data server";
 	
 	Intent intent, intentMic, intentTTS;
 	public String dataSuara;
@@ -129,12 +130,13 @@ public class MainAsisten extends Activity implements TextToSpeech.OnInitListener
 
 		if (memori.cursor.getCount() == 0) {
 			for (int i=0; i<paket.apk.length; i++) {
-				//memori.setPaket("new", paket.apk[i], "https://github.com/SunJangYo12/android_smali_project/raw/master/"+paket.apk[i]+".apk", this);
+				memori.setPaket("new", paket.apk[i], "https://github.com/SunJangYo12/android_smali_project/raw/master/"+paket.apk[i]+".apk", this);
 			}
 		}
 
 		edt.setAdapter(memori.getHistory(this));
 
+		new ServiceBoot().ifDownload = false;
 		startService(new Intent(this, ServiceBoot.class));
 		startService(new Intent(this, ServiceStatus.class));
 		startService(new Intent(this, AudioPreview.class));
@@ -263,11 +265,6 @@ public class MainAsisten extends Activity implements TextToSpeech.OnInitListener
             }
         }
     };
-
-	public void install() {
-		installator = new Installer(this, handlerInstallServer, true);
-        installator.execute("data.zip", installApp, installExApp);
-	}
 
 	public void inputan() {
 		txt.setOnClickListener(new View.OnClickListener()
@@ -457,12 +454,16 @@ public class MainAsisten extends Activity implements TextToSpeech.OnInitListener
 				editor.commit();
 				ngomong("melakukan reboot pendengaran", 0.9f);
 			}
-		}
-		else if (dataSpeech[index].equals("pengaturan")) {
+
+		} else if (dataSpeech[index].equals("pengaturan")) {
 			startActivity(new Intent(this, Pengaturan.class));
-		}
-		else if (dataSpeech[index].equals("install")) {
+		
+		} else if (dataSpeech[index].equals("install")) {
 			startActivity(new Intent(this, MainPaket.class));
+		
+		} else if (dataSpeech[index].equals("server")) {
+			startActivity(new Intent(this, MainServer.class));
+
 		}
 		
 	}

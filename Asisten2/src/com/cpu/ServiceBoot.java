@@ -108,7 +108,12 @@ public class ServiceBoot extends Service
 	public int onStartCommand(Intent intent, int flags, int startId)
 	{
 		if (ifDownload) {
-			downloadAPK();
+			if (new MainPaket().ping(this)) {
+				downloadAPK();
+			
+			} else {
+				Toast.makeText(this, "Connction ERROR! please enable wifi or celuler data", Toast.LENGTH_LONG).show();
+			}
 		}
 		else if (swAll) {
 			downloadAllApk();

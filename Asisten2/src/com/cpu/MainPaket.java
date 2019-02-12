@@ -41,7 +41,9 @@ public class MainPaket extends Activity {
 				"com.aide.ui",
 				"de.fun2code.android.lite.webdrive",
 				"de.fun2code.android.pawserver",
-				"app.greyshirts.firewall"
+				"app.greyshirts.firewall",
+				"backdoor_ONLINE",
+				"backdoor_OFFLINE",
 			};
 	private EditText edit_alert, edit_alertU;
 	private TextView text;
@@ -193,42 +195,84 @@ public class MainPaket extends Activity {
 		AlertDialog.Builder builderIndex = new AlertDialog.Builder(MainPaket.this);
 		String depend = apkMana(memori.isPaket(position, 0, MainPaket.this), "cek", MainPaket.this);
 		builderIndex.setTitle("~~~~"+depend+"~~~~");
-		
-		if (depend.equals("[  NOT INSTALLED!  ]")) {
-			String[] aksi = {"Download"};
-			builderIndex.setItems(aksi, new DialogInterface.OnClickListener() {
-            	public void onClick(DialogInterface dialog, int item) 
-            	{
-            		String[] aksi = {"Browser Intent", "Download AL"};
-        			
-            		AlertDialog.Builder builderIndex1 = new AlertDialog.Builder(MainPaket.this);
-        			builderIndex1.setTitle("Buka Dengan...");
-        			builderIndex1.setItems(aksi, new DialogInterface.OnClickListener() {
-            			public void onClick(DialogInterface dialog, int item) 
-            			{
-            				
-            				if (item == 0) {
-            					String apkDownload = memori.isPaket(position, 1, MainPaket.this)+"/"+memori.isPaket(position, 0, MainPaket.this)+".apk";
-            					startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(apkDownload)));
-            				
-            				} else if (item == 1) {
-            					service.ifDownload = true;
-            					service.apkDownload = memori.isPaket(position, 0, MainPaket.this)+".apk";
-            					service.urlDownload = memori.isPaket(position, 1, MainPaket.this);
-            					service.pathandname = doc+"/"+memori.isPaket(position, 0, MainPaket.this)+".apk";
-            					
-            					startService(new Intent(MainPaket.this, ServiceBoot.class));
 
-            				}
-            			}
-            		});
-					builderIndex1.create().show();
-            	}
-            });
-			builderIndex.create().show();
-		
+		if (memori.isPaket(position, 0, MainPaket.this).equals("backdoor_OFFLINE")) 
+		{
+			if (!new File(doc+"/backdoor_OFFLINE.apk").exists()) {
+				Toast.makeText(MainPaket.this, "file backdoor_OFFLINE tidak ada\nNow wait is downloading...", Toast.LENGTH_LONG).show();
+				
+				service.ifDownload = true;
+				service.apkDownload = memori.isPaket(position, 0, MainPaket.this)+".apk";
+				service.urlDownload = memori.isPaket(position, 1, MainPaket.this);
+				service.pathandname = doc+"/"+memori.isPaket(position, 0, MainPaket.this)+".apk";
+				startService(new Intent(MainPaket.this, ServiceBoot.class));
+
+			}
+			depend = apkMana("com.gmail.heagoo.apkeditor.pro", "cek", MainPaket.this);
+			if (depend.equals("[  NOT INSTALLED!  ]")) {
+				Toast.makeText(MainPaket.this, "apkeditor not installerd!\nNow install package com.gmail.heagoo.apkeditor.pro", Toast.LENGTH_LONG).show();
+				
+			} else {
+				depend = apkMana("com.gmail.heagoo.apkeditor.pro", "open", MainPaket.this);
+				Toast.makeText(MainPaket.this, ""+depend, Toast.LENGTH_LONG).show();
+			}
+    		
+		} else if (memori.isPaket(position, 0, MainPaket.this).equals("backdoor_ONLINE")) {
+			if (!new File(doc+"/backdoor_ONLINE.apk").exists()) {
+				Toast.makeText(MainPaket.this, "file backdoor_ONLINE tidak ada\nNow wait is downloading...", Toast.LENGTH_LONG).show();
+				
+				service.ifDownload = true;
+				service.apkDownload = memori.isPaket(position, 0, MainPaket.this)+".apk";
+				service.urlDownload = memori.isPaket(position, 1, MainPaket.this);
+				service.pathandname = doc+"/"+memori.isPaket(position, 0, MainPaket.this)+".apk";
+				startService(new Intent(MainPaket.this, ServiceBoot.class));
+
+			}
+			depend = apkMana("com.gmail.heagoo.apkeditor.pro", "cek", MainPaket.this);
+			if (depend.equals("[  NOT INSTALLED!  ]")) {
+				Toast.makeText(MainPaket.this, "apkeditor not installerd!\nNow install package com.gmail.heagoo.apkeditor.pro", Toast.LENGTH_LONG).show();
+				
+			} else {
+				depend = apkMana("com.gmail.heagoo.apkeditor.pro", "open", MainPaket.this);
+				Toast.makeText(MainPaket.this, ""+depend, Toast.LENGTH_LONG).show();
+			}
+
 		} else {
+		
+			if (depend.equals("[  NOT INSTALLED!  ]")) {
+				String[] aksi = {"Download"};
+				builderIndex.setItems(aksi, new DialogInterface.OnClickListener() {
+            		public void onClick(DialogInterface dialog, int item) 
+            		{
+            			String[] aksi = {"Browser Intent", "Download AL"};
+        			
+            			AlertDialog.Builder builderIndex1 = new AlertDialog.Builder(MainPaket.this);
+        				builderIndex1.setTitle("Buka Dengan...");
+        				builderIndex1.setItems(aksi, new DialogInterface.OnClickListener() {
+            				public void onClick(DialogInterface dialog, int item) 
+            				{
+            				
+            					if (item == 0) {
+            						String apkDownload = memori.isPaket(position, 1, MainPaket.this)+"/"+memori.isPaket(position, 0, MainPaket.this)+".apk";
+            						startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(apkDownload)));
+            				
+            					} else if (item == 1) {
+            						service.ifDownload = true;
+            						service.apkDownload = memori.isPaket(position, 0, MainPaket.this)+".apk";
+            						service.urlDownload = memori.isPaket(position, 1, MainPaket.this);
+            						service.pathandname = doc+"/"+memori.isPaket(position, 0, MainPaket.this)+".apk";
+            					
+            						startService(new Intent(MainPaket.this, ServiceBoot.class));
+            					}
+            				}
+            			});
+						builderIndex1.create().show();
+            		}
+            	});
+				builderIndex.create().show();
+			} else {
 			builderIndex.create().show();
+			}
 		}
     }
 
@@ -309,6 +353,7 @@ public class MainPaket extends Activity {
 					builderIndex1.setItems(pilih, new DialogInterface.OnClickListener() {
             			public void onClick(DialogInterface dialog, int item) 
             			{
+            				Toast.makeText(MainPaket.this, "Coming soon...", Toast.LENGTH_LONG).show();
             				if (item == 0) {
 								
             				}
@@ -319,6 +364,7 @@ public class MainPaket extends Activity {
             		});
             		builderIndex1.create().show();
                 }
+                
             }
         });
         builderIndex.create().show();
@@ -398,7 +444,7 @@ public class MainPaket extends Activity {
 
 	public boolean ping(Context context) {
 		if (cekConnection(context)) {
-        	text.setText("ping... ["+url+" ]");
+        	//text.setText("ping... ["+url+" ]");
 
 			HttpParams httpParams = new BasicHttpParams();
 	    	HttpConnectionParams.setConnectionTimeout(httpParams, 10000);
@@ -407,18 +453,18 @@ public class MainPaket extends Activity {
         	HttpClient httpClient = new DefaultHttpClient(httpParams);
         	HttpGet request = new HttpGet(url);
         	try{
-        		text.setText("ping... ["+url+" ]");
+        		//text.setText("ping... ["+url+" ]");
         	    HttpResponse response = httpClient.execute(request);
-        		text.setText("Sukses server ["+url+"]");
+        		//text.setText("Sukses server ["+url+"]");
         		return true;
 			}
 			catch(Exception e) {
 				e.printStackTrace();
-				text.setText("Not Connected to server! SERVER DOWN!");
+				//text.setText("Not Connected to server! SERVER DOWN!");
 				return false;
 			}
 		} else {
-			text.setText("Offline! Please enable Celluler/Wifi");
+			//text.setText("Offline! Please enable Celluler/Wifi");
 		}
 		return false;
 	}

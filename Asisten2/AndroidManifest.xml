@@ -27,6 +27,7 @@
 		
         <activity android:name=".MainTouchAsisten" ></activity>
         <activity android:name=".MainPaket" ></activity>
+        <activity android:name=".MainServer" ></activity>
         <activity android:name=".MainCatatan" ></activity>
         <activity android:name=".MainMemori" ></activity>
         <activity android:name=".MainTerminal" ></activity>

@@ -6,6 +6,7 @@ import android.content.*;
 import android.os.*;
 import android.widget.*;
 import com.cpu.log.*;
+import android.util.Log;
 
 import java.io.*;
 import java.util.zip.*;
@@ -19,7 +20,7 @@ class Unzip {
     /*
      * Щитает размер архива, если его разархивировать
      */
-    public static long calcUnzipped(InputStream is) {
+    public static long calcUnzipped(FileInputStream is) {
         ZipInputStream zip = new ZipInputStream(is);
         ZipEntry ze;
         long realSize = 0;
@@ -30,23 +31,54 @@ class Unzip {
             }
         } catch (IOException e) {
         }
-        //L.write(tag, "calcUnzipped return = " + (int)realSize);
+        L.write(tag, "calcUnzipped return = " + (int)realSize);
         return realSize;
     }
 
-    public static boolean unzip(InputStream is, File folderToUnzip, Installer inst, boolean setRights) {
-        //L.write(tag, "method unzip started");
-        ZipInputStream zip = new ZipInputStream(new BufferedInputStream(is));
-        FileOutputStream fos = null;
-        String fileName = null;
-        ZipEntry zipEntry;
+    public static void unzipE(String _zipFile, String _targetLocation) {
         try {
+            FileInputStream fin = new FileInputStream(_zipFile);
+            ZipInputStream zin = new ZipInputStream(fin);
+            ZipEntry ze = null;
+
+            while ((ze = zin.getNextEntry()) != null) {
+                if (ze.isDirectory()) {
+                    //ce(ze.getName());
+                
+                } else {
+                    FileOutputStream fout = new FileOutputStream(_targetLocation+ze.getName());
+                    for (int c=zin.read(); c!=-1; c=zin.read()) {
+                        fout.write(c);
+                    }
+
+                    zin.closeEntry();
+                    fout.close();
+                }
+            }
+            zin.close();
+        
+        } catch(Exception e) {
+
+        }
+    }
+
+    public static boolean unzip(String is, File folderToUnzip, Installer inst, boolean setRights) {
+        try {
+            L.write(tag, "method unzip started");
+
+            FileInputStream fin = new FileInputStream(is);
+            ZipInputStream zip = new ZipInputStream(fin);
+            FileOutputStream fos = null;
+            String fileName = null;
+            ZipEntry zipEntry;
+       
             while ((zipEntry = zip.getNextEntry()) != null) {
                 long free = folderToUnzip.getFreeSpace();
                 fileName = zipEntry.getName();
+
                 final File outputFile = new File(folderToUnzip, fileName);
                 outputFile.getParentFile().mkdirs();
-                //L.write("Unzip", "Zip entry: " + fileName + ", extract to: " + outputFile.getPath());
+                L.write("Unzip", "Zip entry: " + fileName + ", extract to: " + outputFile.getPath());
                 if (fileName.endsWith("/")) {
                     //Log.i("Unzip", fileName+ " is directory");
                     outputFile.mkdirs();
@@ -97,16 +129,14 @@ class Unzip {
                      }*/
                 }
             }
+            zip.close();
+
             //Runtime.getRuntime().exec("chmod 644 " + "/data/data/" + Const.MY_PACKAGE_NAME + "/my.ini");
         } catch (IOException ioe) {
             L.write(tag, "IOErr in unzip (nextEntry, closeEntry or other): " + ioe);
             inst.setErr(ioe.getMessage());
             return false;
-        } finally {
-            try {
-                zip.close();
-            } catch (IOException e) {
-            }
+        
         }
         return true;
     }
@@ -127,6 +157,7 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
     //private Loader loader;
     private boolean setRights;
     private long currProgress;
+    public static String dataInstall = "";
 
     public Installer(Context context, Handler h, boolean setRights) {
         this.context = context;
@@ -159,10 +190,7 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
         final String nameInAssets = p1[0];
         final String urlToInstall = p1[1];
         DOC_FOLDER = p1[2];
-        //final String saveAs = p1[3];
-        //L.write("Installer", "doInBackground started");
-
-        /*ЭТАП I - ПОДГОТОВКА ФАЙЛОВОЙ СИСТЕМЫ*/
+       
         File folderInstall = new File(urlToInstall);// сюда распаковываем
         File fileDocFolder = new File(DOC_FOLDER);//корневая папка сервера (сюда загружаем архив)
         //File fileArchive = new File(fileDocFolder, saveAs);//загружаемый файл
@@ -172,57 +200,10 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
         if (!fileDocFolder.exists()) {
             fileDocFolder.mkdirs();
         }
-        /*if (!fileArchive.exists()) {
-         try {
-         fileArchive.createNewFile();
-         } catch (IOException e) {
-         //L.write("Installer", "Error in create new file (archive)" + e.getLocalizedMessage());
-         setErr(R.string.err_create_new_file);
-         return false;
-         }
-         }*/
-
-        /*ЭТАП II - ЗАГРУЗКА АРХИВА*/
-        // Создаем загрузчик
-        //loader = new Loader(context, this, nameInAssets, fileArchive);
-        //contentLength = loader.getLength();
-        //L.write("Installer", "contentLength() = " + contentLength);
-        //if (contentLength == -1) {
-        //L.write("Installer", "contentLength() return -1");
-        //setErr(R.string.not_have_internet, getErr());
-        //return false;
-        //}
-        // Пропускем уже загруженное, если есть
-        //long skipThis = fileArchive.length();
-        //L.write("Installer", "long skipThis = " + skipThis);
-        //loader.setReaded(skipThis);
-        // проверяем достаточно ли памяти на флешке для архива
-        //long free = fileDocFolder.getFreeSpace();
-        //if (free < (contentLength - skipThis)) {
-        //L.write("Installer", "free = " + free + " b, " + free / 1024576 + " Mb");
-        //setErr(R.string.out_of_memory_htdocs, (contentLength - skipThis - free) / 1024576 + " Mb");
-        //return false;
-        //}
-        // Собственно сама загрузка
-        //dialog.setMax((int) contentLength);
-        //dialog.setProgress((int) skipThis);
-        //int countErr = 0;//колличество попыток перезапуска загрузки
-        //while (!loader.load()) {
-        //if (isCancelled()) {
-        //return false;
-        //} else if (countErr > MAX_ERR) {
-        //setErr(R.string.copy_error);
-        //return false;
-        //} else {
-        //countErr++;
-        //}
-        //}
-        //L.write("Installer", "loaded with " + countErr + " error(s)");
-
-        /* ЭТАП III - РАСПАКОВКА ЗАГРУЖЕННОГО АРХИВА*/
-        // Свободная локальная память контроллируется при распаковке в классе Unzip
         try {
-            long maxBytes = Unzip.calcUnzipped(context.getAssets().open(nameInAssets));
+            FileInputStream fileZip = new FileInputStream(nameInAssets);
+
+            long maxBytes = Unzip.calcUnzipped(fileZip);
             final int maxKb = (int) (maxBytes / 1024L);
 
             ui.post(new Runnable() {
@@ -234,7 +215,7 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
                 }
             });
 
-            if (!Unzip.unzip(context.getAssets().open(nameInAssets), folderInstall, this, setRights)) {
+            if (!Unzip.unzip(nameInAssets, folderInstall, this, setRights)) {
                 return false;
             } else {
                 // OK, replace paths in configs to actual in this ROM.
@@ -250,7 +231,7 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
                 return true;
             }
         } catch (IOException e) {
-            //L.write("Installer", "error in calling unzip" + e.getLocalizedMessage());
+            L.write("Installer", "error in calling unzip" + e.getLocalizedMessage());
             setErr(e.toString());
             return false;
         }
@@ -282,7 +263,7 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
     public void onPostExecute(Boolean result) {
         //Log.i("Installer", "onPostExecute with: " + result);
         if (result) {
-            Toast t = Toast.makeText(context, "Extrack complete "+DOC_FOLDER, Toast.LENGTH_LONG);
+            Toast t = Toast.makeText(context, "Extrack complete ", Toast.LENGTH_LONG);
             ServerUtils utils = new ServerUtils(context);
             
             t.show();
@@ -306,18 +287,19 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
 
             h.sendEmptyMessage(MainAsisten.INSTALL_OK);
         } else {
+            dataInstall = "noFile";
             Toast t = Toast.makeText(context, getErr().replace("annimon", "pentagon"), Toast.LENGTH_LONG);
             t.show();
             dialog.dismiss();
             setErr("");
             h.sendEmptyMessage(MainAsisten.INSTALL_ERR);
         }
-        //L.write("Installer", "onPostExecuted");
+        L.write("Installer", "onPostExecuted");
 
     }
 
     public void onClick(DialogInterface p1, int p2) {
-        //L.write("Installer", "calcel task in onClick()");
+        L.write("Installer", "calcel task in onClick()");
         setErr("install calcel");
         this.cancel(false);
         onPostExecute(false);

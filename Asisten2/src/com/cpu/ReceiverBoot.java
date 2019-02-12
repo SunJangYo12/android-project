@@ -196,7 +196,7 @@ public class ReceiverBoot extends BroadcastReceiver
         	ArrayAdapter<String> exe = memori.getCatatan(context);
         	catatan = memori.isCatatan(0, 0, context);
         }catch(Exception e) {
-        	Toast.makeText(context, ""+e, Toast.LENGTH_LONG).show();
+        	//Toast.makeText(context, ""+e, Toast.LENGTH_LONG).show();
         }
 
         Notification notification = new Notification.Builder(context)

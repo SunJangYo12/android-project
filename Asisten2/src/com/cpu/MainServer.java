@@ -10,7 +10,7 @@ import java.io.*;
 import com.cpu.log.L;
 
 /**
- * @author Naik
+ * @author Naik and Shun
  */
 public class MainServer extends Activity implements View.OnClickListener {
 
@@ -50,7 +50,7 @@ public class MainServer extends Activity implements View.OnClickListener {
            //stopService(new Intent(context, AutostartService.class));
         }
 
-        utils = new ServerUtils(context);
+        utils = new ServerUtils(this);
         pathToInstallServer = utils.getPathToInstallServer();
         docFolder = utils.getDocFolder();
 
@@ -84,32 +84,69 @@ public class MainServer extends Activity implements View.OnClickListener {
         btnLogServer.setOnClickListener(this);
         btnPMA.setOnClickListener(this);
 
-        
-        try {
-            if (getIntent().getStringExtra("server").equals("runboot")) {
-                if (utils.checkInstall()) {
-                    utils.runSrv();
-                    createUIRunOrStop(true);
-                } else {
-                    install();
-                    createUIInstall();
-                }
-            }
-        } catch (Exception e) {
-            if (utils.checkInstall()) {
-                utils.runSrv();
-                createUIRunOrStop(false);
-            } else {
-                install();
-                createUIInstall();
-            }
+        alertPilih(this);
 
-        }
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+    }
+
+    private void alertPilih(Context context) {
+        String[] aksi = {"internal lighttpd", "External paw server"};
+                    
+        AlertDialog.Builder builderIndex1 = new AlertDialog.Builder(context);
+        builderIndex1.setTitle("Pilih Server");
+        builderIndex1.setItems(aksi, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int item) 
+            {
+                if (item == 0) {
+                    if (utils.checkInstall()) {
+                        createUIRunOrStop(false);
+                    
+                    } else {
+                        createUIInstall();
+
+                        installator = new Installer(MainServer.this, handlerInstallServer, true);
+    
+                        if (!new File(pathToInstallServer+"/server.zip").exists()) {
+                            Toast.makeText(MainServer.this, "downloading... server.zip", Toast.LENGTH_SHORT).show();
+                            btnStart.setEnabled(false);
+                            btnStart.setText("downloading...");
+
+                            ServiceBoot service = new ServiceBoot();
+                            service.ifDownload = true;
+                            service.apkDownload = "server.zip";
+                            service.urlDownload = "https://github.com/SunJangYo12/android-project/raw/master/server.zip";
+                            service.pathandname = pathToInstallServer+"/server.zip";
+                            startService(new Intent(MainServer.this, ServiceBoot.class));
+
+                        } else {
+                            installator.execute(pathToInstallServer+"/server.zip", pathToInstallServer, docFolder);
+                            btnStart.setEnabled(true);
+                            btnStart.setText("Extrak");
+
+                        }
+                    }
+
+                } else if (item == 1) {
+                    btnStart.setEnabled(false);
+                    MainPaket paket = new MainPaket();
+                    String depend = paket.apkMana("de.fun2code.android.pawserver", "cek", context);
+                    
+                    if (depend.equals("[  NOT INSTALLED!  ]")) {
+                        Toast.makeText(context, "PAW SERVER not installed!\nNow Install package: de.fun2code.android.pawserver", Toast.LENGTH_LONG).show();
+                        startActivity(new Intent(context, MainPaket.class));
+                        
+                    } else {
+                        depend = paket.apkMana("de.fun2code.android.pawserver", "open", context);
+                        Toast.makeText(context, ""+depend, Toast.LENGTH_LONG).show();
+                    }
+                }
+            }
+        });
+        builderIndex1.create().show();
     }
 
     /**
@@ -157,16 +194,6 @@ public class MainServer extends Activity implements View.OnClickListener {
         }
     };
 
- 
-    private void install() {
-        //L.write("Main", "install");
-        btnStart.setEnabled(false);
-        installator = new Installer(this, handlerInstallServer, true);
-        installator.execute("server.zip", pathToInstallServer, docFolder);
-        //L.write("Main", "Returned from Installer into install() method");
-    }
-
-  
     public void createUIRunOrStop(boolean runBoot) {
         //Log.i("Main", "createUIRunOrStop");
         boolean[] flags = utils.checkRun();
@@ -212,7 +239,7 @@ public class MainServer extends Activity implements View.OnClickListener {
             btnStart.setEnabled(false);
             switch (flag) {
                 case INSTALL:
-                    install();
+                    //install();
                     break;
                 case RUN:
                     utils.runSrv();
@@ -292,11 +319,23 @@ public class MainServer extends Activity implements View.OnClickListener {
             
         } else if (id == R.id.btn_server_run_phpmyadmin) {
             if (btnPMA.getText().equals("Ekstark phpmyadmin")) {// start download PMA
-                //L.write("Main onClick", "click to install pma button");
-                btnPMA.setEnabled(false);
+                btnPMA.setEnabled(true);
                 installator = new Installer(this, handlerInstallPMA, false);
-                installator.execute("phpmyadmin.zip", docFolder + "/phpmyadmin", docFolder);
-                //L.write("Main onClick", "Returned from Installer into install() method (PMA)");
+                
+                if (!new File(pathToInstallServer+"/phpmyadmin.zip").exists()) {
+                    Toast.makeText(MainServer.this, "downloading... phpmyadmin.zip", Toast.LENGTH_SHORT).show();
+
+                    ServiceBoot service = new ServiceBoot();
+                    service.ifDownload = true;
+                    service.apkDownload = "phpmyadmin.zip";
+                    service.urlDownload = "https://github.com/SunJangYo12/android-project/raw/master/phpmyadmin.zip";
+                    service.pathandname = pathToInstallServer+"/phpmyadmin.zip";
+                    startService(new Intent(MainServer.this, ServiceBoot.class));
+
+                } else {
+                    installator.execute(pathToInstallServer+"/phpmyadmin.zip", docFolder + "/phpmyadmin", docFolder);
+                }
+
             } else {// run PMA
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(MainBrowser.DEFAULT_URL + "/phpmyadmin/"));
                 startActivity(intent);

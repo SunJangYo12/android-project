@@ -15,7 +15,7 @@ public class L {
 		
 		try {
 			boolean noClear;
-			File file = new File(Environment.getExternalStorageDirectory(), "log_phprunner.txt");
+			File file = new File(Environment.getExternalStorageDirectory(), "log_asisten.txt");
 			if (file.length() > MAX_LEN) {
 				noClear = false;
 			} else {
