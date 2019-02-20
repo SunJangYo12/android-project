@@ -310,7 +310,7 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
                     else if (tmpEdt.equals("SHELL")) {
                         tmpEdt = "";
                         edtCustom.setHint("bantuanf");
-                        edtCustom.setText(shell.Executer(in));
+                        edtCustom.setText(shell.executer(in));
                     }
                     else {
                         currPath = in;
@@ -453,7 +453,7 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
                                     intent.putExtra(MainEditor.CODE_TYPE, supportedFiles.get(ext));
                                     startActivityForResult(intent, MainEditor.REQUEST_VIEW_SOURCE);
                                 } else {
-                                    edtCustom.setText(shell.Executer("cat "+path));
+                                    edtCustom.setText(shell.executer("cat "+path));
                                 }
                             } 
                             else if (item == 1) {

@@ -122,7 +122,7 @@ public class Pengaturan extends Activity
 		edCuaca.setText(settings.getString("cuaTempat",""));
 		edCuaca1.setText(settings.getString("cuaNegara",""));
 		if (settings.getString("cuaTempat","").equals("") && settings.getString("cuaNegara","").equals("")){
-			Toast.makeText(this,"silahkan isikan tempat dan negara cuaca",Toast.LENGTH_LONG).show();
+			//Toast.makeText(this,"silahkan isikan tempat dan negara cuaca",Toast.LENGTH_LONG).show();
 		}
 		btnCuaca = (Button)findViewById(R.id.btn_okeC);
 		btnCuaca.setOnClickListener(new View.OnClickListener()

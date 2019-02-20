@@ -73,6 +73,12 @@ public class MainBrowser extends Activity {
     private ValueCallback<Uri> mFileChooserCallback;
     private ClipboardManager clip;
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        finish();
+    }
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);

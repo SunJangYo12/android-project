@@ -108,6 +108,7 @@ public class MainAsisten extends Activity implements TextToSpeech.OnInitListener
 		super.onAttachedToWindow();
 	}*/
 
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) 
 	{

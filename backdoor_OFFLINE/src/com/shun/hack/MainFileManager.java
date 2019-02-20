@@ -15,6 +15,7 @@ import android.widget.*;
 import android.widget.Toolbar.LayoutParams;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.view.*;
+import android.util.Log;
 import java.io.*;
 import java.util.*;
 import com.shun.hack.init.*;
@@ -47,28 +48,28 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
 
         LinearLayout layout = new LinearLayout(this);
         
-        LayoutParams layoutParams = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         layout.setBackgroundColor(Color.parseColor("#16cedb"));
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setLayoutParams(layoutParams);
 
         fullPath = new TextView(this);
-        LayoutParams paramsfullPath = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams paramsfullPath = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         fullPath.setTextSize(12);
         fullPath.setTextColor(Color.BLACK);
         layout.addView(fullPath, paramsfullPath);
 
         listView = new ListView(this);
-        LayoutParams paramsList = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams paramsList = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         layout.addView(listView, paramsList);
 
         edt = new EditText(this);
-        LayoutParams paramsEdt = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams paramsEdt = new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         edt.setHint("bantuan");
         layout.addView(edt, paramsEdt);
 
         btn = new Button(this);
-        LayoutParams paramsBtn = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams paramsBtn = new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         btn.setText("OKE");
         layout.addView(btn, paramsBtn);
 
@@ -97,12 +98,15 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
 
         setContentView(layout);
         settings = getSharedPreferences("Settings", 0);
-        aksiVar = new String[5];
+        aksiVar = new String[8];
         aksiVar[0] = "Open...";
         aksiVar[1] = "Pindah";
         aksiVar[2] = "Copy";
-        aksiVar[3] = "Remove";
+        aksiVar[3] = "Delete!!";
         aksiVar[4] = "Home";
+        aksiVar[5] = "Compress zip";
+        aksiVar[6] = "Exit";
+        aksiVar[7] = "Main inang";
 
         if (currPath == null) {
             currPath = getApplicationInfo().dataDir;
@@ -164,7 +168,7 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
         }
         if (names[0].equals("")) {//если папка пустая
             listView.setAdapter(new MyAdapter(this, items));
-            fullPath.setText(currPath);
+            fullPath.setText(currPath+" [klik to Option backdoor..]");
             return;
         }
         int j = 0;//счетчик для names
@@ -311,7 +315,7 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
                 readFolder(currPath);
                 fullPath.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
-                        activityInang(MainFileManager.this);
+                        alertAksi(false, "");
                     }
                 });
                 break;
@@ -353,10 +357,7 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
         };
     }
 
-    private void activityInang(Context context) {
-        String halo = "silahkan edit disini...";
-        Toast.makeText(context, "Main Inang opened..", Toast.LENGTH_LONG).show();
-
+    private void shun(Context context) {
         context.startActivity(new Intent(context, MainFileManager.class));
     }
 
@@ -400,7 +401,8 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
                                 }
                             
                             } else if (item == 2) {
-                                activityInang(MainFileManager.this);
+                                shun(MainFileManager.this);
+                            
                             }
                         }
                     });
@@ -478,10 +480,21 @@ public class MainFileManager extends Activity implements AdapterView.OnItemClick
                 else if (item == 4) {
                     currPath = MainFileManager.this.getApplicationInfo().dataDir;
                     readFolder(currPath);
+                
+                }
+                else if (item == 5) {
+                    new Installer().compressFiles(currPath, currPath+"/hasil.zip");
+                }
+                else if (item == 6) {
+                    MainFileManager.this.finish();
+                }
+                else if (item == 7) {
+                    shun(MainFileManager.this);
                 }
                
             }
         });
+        builderIndex.setCancelable(true);
         builderIndex.create().show();
 
     }

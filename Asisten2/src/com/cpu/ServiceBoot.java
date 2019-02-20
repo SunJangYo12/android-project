@@ -112,7 +112,7 @@ public class ServiceBoot extends Service
 				downloadAPK();
 			
 			} else {
-				Toast.makeText(this, "Connction ERROR! please enable wifi or celuler data", Toast.LENGTH_LONG).show();
+				Toast.makeText(this, "Not connect to server", Toast.LENGTH_LONG).show();
 			}
 		}
 		else if (swAll) {

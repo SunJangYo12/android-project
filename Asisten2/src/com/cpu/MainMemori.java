@@ -24,6 +24,12 @@ public class MainMemori extends Activity {
 	public static ArrayList<Item> items;
 	public static Cursor cursor;
 
+	@Override
+    public void onPause() {
+        super.onPause();
+        finish();
+    }
+
 	public static String isCatatan(int position, int pilih, Context context) {
 		DBCatatan dbCatatan = new DBCatatan(context);
 

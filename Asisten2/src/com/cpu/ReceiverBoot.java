@@ -96,7 +96,7 @@ public class ReceiverBoot extends BroadcastReceiver
 		if (intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED))
 		{
 			ShellExecuter exe = new ShellExecuter();
-			String amp = exe.Executer("cat /sys/class/power_supply/battery/current_now");
+			String amp = exe.executer("cat /sys/class/power_supply/battery/current_now");
 			String[] a = amp.split("(?<=\\G.{1})");
 			String[] b = amp.split("(?<=\\G.{3})");
 			
@@ -214,9 +214,12 @@ public class ReceiverBoot extends BroadcastReceiver
 		if (catatan.equals("")) {
 			notificationManager = (NotificationManager)context.getSystemService(context.NOTIFICATION_SERVICE);
 			notificationManager.cancel(8);
+		
 		} else {
-			notificationManager = (NotificationManager)context.getSystemService(context.NOTIFICATION_SERVICE);
-			notificationManager.notify(8, notification);
+			if (ping(context)) {
+				notificationManager = (NotificationManager)context.getSystemService(context.NOTIFICATION_SERVICE);
+				notificationManager.notify(8, notification);
+			}
 		}
 
 	}

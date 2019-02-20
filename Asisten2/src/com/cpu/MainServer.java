@@ -89,6 +89,12 @@ public class MainServer extends Activity implements View.OnClickListener {
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+        finish();
+    }
+
+    @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
     }

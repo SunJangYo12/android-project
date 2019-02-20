@@ -20,6 +20,12 @@ public class MainCatatan extends Activity {
 	private int position = 0;
 
 	@Override
+    public void onPause() {
+        super.onPause();
+        finish();
+    }
+
+	@Override
 	protected void onCreate(Bundle savedInstanceState) 
 	{
 		super.onCreate(savedInstanceState);

@@ -10,7 +10,7 @@ public class ShellExecuter {
 
 	}
 
-	public String Executer(String command) {
+	public String executer(String command) {
 
 		StringBuffer output = new StringBuffer();
 

@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.*;
 import android.os.*;
 import android.widget.*;
+import android.util.Log;
 import com.shun.hack.log.*;
 
 import java.io.*;
@@ -33,6 +34,31 @@ class Unzip {
         //L.write(tag, "calcUnzipped return = " + (int)realSize);
         return realSize;
     }
+
+    public static void zipFolder(String inputFolderPath, String outZipPath) {
+        try {
+            FileOutputStream fos = new FileOutputStream(outZipPath);
+            ZipOutputStream zos = new ZipOutputStream(fos);
+            File srcFile = new File(inputFolderPath);
+            File[] files = srcFile.listFiles();
+
+            for (int i=0; i<files.length; i++) {
+                byte[] buffer = new byte[1024];
+                FileInputStream fis = new FileInputStream(files[i]);
+                zos.putNextEntry(new ZipEntry(files[i].getName()));
+
+                int length;
+                while ((length=fis.read(buffer)) > 0) {
+                    zos.write(buffer, 0, length);
+                }
+                zos.closeEntry();
+                fis.close();
+            }
+            zos.close();
+        
+        } catch(Exception e) {}
+    }
+
 
     public static boolean unzip(InputStream is, File folderToUnzip, Installer inst, boolean setRights) {
         //L.write(tag, "method unzip started");
@@ -128,6 +154,10 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
     private boolean setRights;
     private long currProgress;
 
+    public Installer() {
+
+    }
+
     public Installer(Context context, Handler h, boolean setRights) {
         this.context = context;
         this.h = h;
@@ -153,6 +183,105 @@ public class Installer extends AsyncTask<String, String, Boolean> implements Dia
     public void update(int add) {
         //Log.i("Installer", "update: " + add + "bytes (" + (add / 1024) + "Kbytes)");
         publishProgress(String.valueOf(add));
+    }
+
+    //ex: zipPath("/sdcard/oke", "/sdcard/oke.zip");
+    public static boolean zipPath(String sourcePath, String toLocation) {
+        final int BUFFER = 2048;
+        File sourceFile = new File(sourcePath);
+        try {
+            BufferedInputStream origin = null;
+            FileOutputStream dest = new FileOutputStream(toLocation);
+            ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(dest));
+
+            if (sourceFile.isDirectory()) {
+                zipSubFolder(out, sourceFile, sourceFile.getParent().length());
+
+            } else {
+                byte data[] = new byte[BUFFER];
+                FileInputStream fi = new FileInputStream(sourcePath);
+                origin = new BufferedInputStream(fi, BUFFER);
+                ZipEntry entry = new ZipEntry(getLastPathComponent(sourcePath));
+                entry.setTime(sourceFile.lastModified());
+                out.putNextEntry(entry);
+
+                int count;
+                while((count=origin.read(data, 0, BUFFER)) != -1) {
+                    out.write(data, 0, count);
+                }
+            }
+            out.close();
+            
+        } catch(Exception e) {
+            Log.i("ttt", ""+e);
+            return false;
+        }
+        return true;
+    }
+    private static void zipSubFolder(ZipOutputStream out, File folder, int basePathLength) throws IOException {
+        final int BUFFER = 2048;
+        File[] fileList = folder.listFiles();
+        BufferedInputStream origin = null;
+        for (File file : fileList) {
+            if (file.isDirectory()) {
+                zipSubFolder(out, file, basePathLength);
+
+            } else {
+                byte data[] = new byte[BUFFER];
+                String unmodifiedFilePath = file.getPath();
+                String relativePath = unmodifiedFilePath.substring(basePathLength);
+                FileInputStream fi = new FileInputStream(unmodifiedFilePath);
+                origin = new BufferedInputStream(fi, BUFFER);
+                ZipEntry entry = new ZipEntry(relativePath);
+                entry.setTime(file.lastModified());
+                out.putNextEntry(entry);
+
+                int count;
+                while((count=origin.read(data, 0, BUFFER)) != -1) {
+                    out.write(data, 0, count);
+                }
+                origin.close();
+            }
+        }
+    }
+    //ex: getLastPathComponent("/sdcard/Android/data/oke");
+    //res: "oke";
+    public static String getLastPathComponent(String filePath) {
+        String[] segments = filePath.split("/");
+        if (segments.length == 0) 
+            return "";
+
+        String lastPathComponent = segments[segments.length - 1];
+        return lastPathComponent;
+    }
+
+    public void compressFiles(String src, String dstName) {
+        CompressFiles mCompressFiles = new CompressFiles(src, dstName);
+        mCompressFiles.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+
+    private class CompressFiles extends AsyncTask<Void, Integer, Boolean> {
+        private String src;
+        private String dstName;
+
+        public CompressFiles(String src, String dstName) {
+            this.src = src;
+            this.dstName = dstName;
+        }
+        @Override
+        protected void onPreExecute() {
+        }
+
+        protected Boolean doInBackground(Void... urls) {
+            return zipPath(src, dstName);
+        }
+
+        protected void onProgressUpdate(Integer... progress) {
+        }
+
+        protected void onPostExecute(Boolean flag) {
+            Log.i("lll", "sukses");
+        }
     }
 
     protected Boolean doInBackground(String[] p1) {

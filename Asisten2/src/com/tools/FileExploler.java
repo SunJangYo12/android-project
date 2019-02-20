@@ -74,7 +74,7 @@ public class FileExploler extends ListActivity
 			}
 			
 			if(getIntent().getStringExtra("index").equals("cari format")){
-				String command = exe.Executer("find /storage/"+folder+"/ -name *."+getIntent().getStringExtra("format"));
+				String command = exe.executer("find /storage/"+folder+"/ -name *."+getIntent().getStringExtra("format"));
 				hasilFind = command.split("\n");
 				
 				//ngomong("pencarian file format"+getIntent().getStringExtra("format")+", selesai", 0.8f);
@@ -83,7 +83,7 @@ public class FileExploler extends ListActivity
 				
 			}
 			else if (getIntent().getStringExtra("index").equals("cari nama")){
-				String command = exe.Executer("find /storage/"+folder+"/ -iname *"+getIntent().getStringExtra("isi")+"*");
+				String command = exe.executer("find /storage/"+folder+"/ -iname *"+getIntent().getStringExtra("isi")+"*");
 				hasilFind = command.split("\n");
 				
 				//ngomong("pencarian file bernama"+getIntent().getStringExtra("isi")+", selesai", 0.8f);
@@ -184,7 +184,7 @@ public class FileExploler extends ListActivity
 									Toast.makeText(getBaseContext(),"edit Kosong",Toast.LENGTH_LONG).show();
 								}
 								else {
-									String command = exe.Executer("find "+o.getPath()+"/ -name "+edCari.getText().toString());
+									String command = exe.executer("find "+o.getPath()+"/ -name "+edCari.getText().toString());
 									hasilFind = command.split("\n");
 
 									outCari("directori");
@@ -195,7 +195,7 @@ public class FileExploler extends ListActivity
 									Toast.makeText(getBaseContext(),"Kosong",Toast.LENGTH_LONG).show();
 								}
 								else {
-									String command = exe.Executer("find "+o.getPath()+"/ -name *."+edCari.getText().toString());
+									String command = exe.executer("find "+o.getPath()+"/ -name *."+edCari.getText().toString());
 									hasilFind = command.split("\n");
 									outCari("format");
 								}
@@ -205,7 +205,7 @@ public class FileExploler extends ListActivity
 									Toast.makeText(getBaseContext(),"Kosong",Toast.LENGTH_LONG).show();
 								}
 								else {
-									String command = exe.Executer("find "+o.getPath()+"/ -iname *"+edCari.getText().toString()+"*");
+									String command = exe.executer("find "+o.getPath()+"/ -iname *"+edCari.getText().toString()+"*");
 									hasilFind = command.split("\n");
 									outCari("nama");
 								}
@@ -217,7 +217,7 @@ public class FileExploler extends ListActivity
 								else {
 									Toast.makeText(getBaseContext(),"contoh -size +10M",Toast.LENGTH_LONG).show();
 		
-									String command = exe.Executer("find "+o.getPath()+"/ "+edCari.getText().toString());
+									String command = exe.executer("find "+o.getPath()+"/ "+edCari.getText().toString());
 									hasilFind = command.split("\n");
 									outCari("size");
 								}
@@ -324,7 +324,7 @@ public class FileExploler extends ListActivity
 			{
 				public void onClick(DialogInterface dialog, int item) {
 					if (item == 0){
-						String command = exe.Executer("cat "+hasil);
+						String command = exe.executer("cat "+hasil);
 						String[] hasil = command.split("\n\n");
 						AlertDialog.Builder builder = new AlertDialog.Builder(FileExploler.this);
 
@@ -350,7 +350,7 @@ public class FileExploler extends ListActivity
 	private void bukaText(Item o)
     {
 		Toast.makeText(this, ""+o.getPath(),Toast.LENGTH_LONG).show();
-		String command = exe.Executer("cat "+o.getPath());
+		String command = exe.executer("cat "+o.getPath());
 		String[] hasil = command.split("\n\n");
 		AlertDialog.Builder builder1 = new AlertDialog.Builder(FileExploler.this);
 		builder1.setCancelable(true);

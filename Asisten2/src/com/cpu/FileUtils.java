@@ -6,25 +6,25 @@ import com.cpu.init.ShellExecuter;
 public class FileUtils {
 
     public static String readFileBash(String path) {
-        return new ShellExecuter().Executer("cat "+path);
+        return new ShellExecuter().executer("cat "+path);
     }
     public static String newFile(String newf) {
-        return new ShellExecuter().Executer("touch "+newf);
+        return new ShellExecuter().executer("touch "+newf);
     }
     public static String newFolder(String path) {
-        return new ShellExecuter().Executer("mkdir "+path);
+        return new ShellExecuter().executer("mkdir "+path);
     }
     public static String removeFile(String rfile) {
-        return new ShellExecuter().Executer("rm "+rfile);
+        return new ShellExecuter().executer("rm "+rfile);
     }
     public static String removeFolder(String path) {
-        return new ShellExecuter().Executer("rm -R "+path);
+        return new ShellExecuter().executer("rm -R "+path);
     }
     public static String moveFile(String here, String dest) {
-        return new ShellExecuter().Executer("mv "+here+" "+dest);
+        return new ShellExecuter().executer("mv "+here+" "+dest);
     }
     public static String copyFile(String file, String dest) {
-        return new ShellExecuter().Executer("cp "+file+" "+dest);
+        return new ShellExecuter().executer("cp "+file+" "+dest);
     }
 
     public static String readFile(String path) {

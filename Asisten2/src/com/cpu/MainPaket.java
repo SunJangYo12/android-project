@@ -68,6 +68,7 @@ public class MainPaket extends Activity {
 
 	//https://github.com/SunJangYo12/android_smali_project/raw/master/app.greyshirts.firewall.apk
 
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) 
 	{

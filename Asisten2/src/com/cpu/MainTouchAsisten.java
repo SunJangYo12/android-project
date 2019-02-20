@@ -37,6 +37,12 @@ public class MainTouchAsisten extends Activity
 		}
 	}
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        finish();
+    }
+
 	public void index() {
 		setContentView(R.layout.main_touch);
 		Button btn_home = (Button)findViewById(R.id.touch_home);
@@ -108,7 +114,7 @@ public class MainTouchAsisten extends Activity
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
             	Context context = view.getContext();
-            	String[] aksi = {"Extract...", "Users app", "Open"};
+            	String[] aksi = {"Extract...", "Users app", "Open", "Uninstall"};
             	String paket = ((TextView)view.findViewById(R.id.apk_txtPaket)).getText().toString();
         			
             	AlertDialog.Builder builderIndex1 = new AlertDialog.Builder(MainTouchAsisten.this);
@@ -139,6 +145,17 @@ public class MainTouchAsisten extends Activity
 		        			MainTouchAsisten.this.finish();
             				Toast.makeText(MainTouchAsisten.this, paket+new MainPaket().apkMana(paket, "open", MainTouchAsisten.this), Toast.LENGTH_LONG).show();
             			}
+                        else if (item == 3) {
+                            try {
+                                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                intent.setData(Uri.parse("package:"+paket));
+                                startActivity(intent);
+
+                            } catch(Exception e) {
+                                Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS);
+                                startActivity(intent);
+                            }
+                        }
             		}
             	});
 				builderIndex1.create().show();
@@ -154,7 +171,7 @@ public class MainTouchAsisten extends Activity
             	Context context = view.getContext(); // Get a context for further usages.
 		        String packageName = ((TextView) view.findViewById(R.id.apk_user_textViewPackageItem)).getText().toString();
 
-            	String[] aksi = {"Extract...", "Systems app"};
+            	String[] aksi = {"Extract...", "Systems app", "Uninstall"};
         			
             	AlertDialog.Builder builderIndex1 = new AlertDialog.Builder(MainTouchAsisten.this);
         		builderIndex1.setTitle(packageName);
@@ -180,6 +197,17 @@ public class MainTouchAsisten extends Activity
             			else if (item == 1) {
             				apkManager();
             			}
+                        else if (item == 2) {
+                            try {
+                                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                intent.setData(Uri.parse("package:"+packageName));
+                                startActivity(intent);
+
+                            } catch(Exception e) {
+                                Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS);
+                                startActivity(intent);
+                            }
+                        }
             		}
             	});
 				builderIndex1.create().show();
